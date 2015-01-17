@@ -1,4 +1,5 @@
-#include "WPIlib.h"
+#include <Joystick.h>
+#include <OI.h>
 
 /*
 
@@ -7,27 +8,43 @@
  *  Created on: Jan 16, 2015
  *      Author: Programming
  */
-class OI {
-private:
-	Joystick leftJoystick;
-public:
-	OI(uint32_t leftJoystickChannel):
-		leftJoystick(leftJoystickChannel) {
 
+
+OI::OI(Joystick& mainJoystick2){
+	mainJoystick = &mainJoystick2;
+}
+void OI::deadD(){
+	if (mainJoystick->GetX() > deadzone || mainJoystick->GetX() < -deadzone){
+		x = mainJoystick->GetX();
+	} else {
+		x = 0;
+	}
+	if (mainJoystick->GetY() > deadzone || mainJoystick->GetY() < -deadzone){
+		y = mainJoystick->GetY();
+	} else {
+		y = 0;
 	}
 
-	double GetX() {
-		return leftJoystick.GetX();
+	if (mainJoystick->GetTwist() > deadzone || mainJoystick->GetTwist() < -deadzone){
+		twist = mainJoystick->GetTwist();
+	} else {
+		twist = 0;
 	}
+}
+double OI::getX() const{
+	return x;
+}
+double OI::getY() const{
+	return y;
+}
+double OI::getTwist() const{
+	return twist;
+}
 
-	double GetY() {
-		return leftJoystick.GetY();
-	}
+Joystick* OI::getJoystick() const{
+	return mainJoystick;
+}
 
-	double GetZ() {
-		return leftJoystick.GetZ();
-	}
-};
 
 
 
