@@ -1,50 +1,76 @@
 #include <Joystick.h>
 #include <OI.h>
+#include <cmath>
 
 /*
 
-* OI.cpp
+ * OI.cpp
  *
  *  Created on: Jan 16, 2015
  *      Author: Programming
  */
 
-
-OI::OI(Joystick& mainJoystick2){
-	mainJoystick = &mainJoystick2;
+OI::OI(Joystick* mainJoystick2) {
+	mainJoystick = mainJoystick2;
 }
-void OI::deadD(){
-	if (mainJoystick->GetX() > deadzone || mainJoystick->GetX() < -deadzone){
-		x = mainJoystick->GetX();
+double OI::GetX() {
+	double currentX = mainJoystick->GetX();
+	//adds deadzone and ramping
+	if (currentX > deadzone || currentX < -deadzone) {
+		if (std::abs(currentX - x) < shiftPerCycle) {
+			x = currentX;
+		} else if (currentX > x) {
+			x = x + shiftPerCycle;
+		} else {
+			x = x - shiftPerCycle;
+		}
 	} else {
 		x = 0;
 	}
-	if (mainJoystick->GetY() > deadzone || mainJoystick->GetY() < -deadzone){
-		y = mainJoystick->GetY();
+	return x;
+}
+double OI::GetY() {
+	double currentY = mainJoystick->GetY();
+	//adds deadzone and ramping
+	if (currentY > deadzone || currentY < -deadzone) {
+		if (std::abs(currentY - y) < shiftPerCycle) {
+			y = currentY;
+		} else if (currentY > y) {
+			y = y + shiftPerCycle;
+		} else {
+			y = y - shiftPerCycle;
+		}
 	} else {
 		y = 0;
 	}
-
-	if (mainJoystick->GetTwist() > deadzone || mainJoystick->GetTwist() < -deadzone){
-		twist = mainJoystick->GetTwist();
+	return y;
+}
+double OI::GetTwist() {
+	double currentTwist = mainJoystick->GetTwist();
+	//adds deadzone and ramping
+	if (currentTwist > deadzone || currentTwist < -deadzone) {
+		if (std::abs(currentTwist - twist) < shiftPerCycle) {
+			twist = currentTwist;
+		} else if (currentTwist > twist) {
+			twist = twist + shiftPerCycle;
+		} else {
+			twist = twist - shiftPerCycle;
+		}
 	} else {
 		twist = 0;
 	}
-}
-double OI::getX() const{
-	return x;
-}
-double OI::getY() const{
-	return y;
-}
-double OI::getTwist() const{
 	return twist;
 }
 
-Joystick* OI::getJoystick() const{
+bool OI::GetTrigger(){
+	if(!lastTriggered&&mainJoystick->GetTrigger())
+	{
+		triggerState=!triggerState;
+	}
+	lastTriggered = mainJoystick->GetTrigger();
+	return triggerState;
+}
+Joystick* OI::GetJoystick() const {
 	return mainJoystick;
 }
-
-
-
 

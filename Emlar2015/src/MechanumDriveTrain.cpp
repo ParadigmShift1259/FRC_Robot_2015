@@ -8,9 +8,15 @@
 #include <iostream>
 
 	void MechanumDriveTrain::Drive() {
-		operatorInputs.deadD();
-		std::cout << operatorInputs.getX()<<std::endl;
-		robotDrive.MecanumDrive_Cartesian(operatorInputs.getX(),operatorInputs.getY(),
-				operatorInputs.getTwist());
+		if(operatorInputs->GetTrigger())
+		{
+			robotDrive->SetMaxOutput(0.5);
+		} else {
+			robotDrive->SetMaxOutput(1.0);
+		}
+		robotDrive->MecanumDrive_Cartesian(
+				operatorInputs->GetY(),
+				operatorInputs->GetX(),
+				-operatorInputs->GetTwist());
 	}
 

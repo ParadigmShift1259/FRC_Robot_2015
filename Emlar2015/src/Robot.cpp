@@ -15,11 +15,16 @@ private:
 	const uint32_t frontRightChannel 	= 0;
 	const uint32_t backRightChannel 	= 3;
 
+	const uint32_t joystickChannel		= 0;
 
-	uint32_t joystickChannel;
-	Joystick stick;			// only joystick
-	OI opIn;
-	MechanumDriveTrain driveTrain;
+	Talon* frontLeftWheel;
+	Talon* backLeftWheel;
+	Talon* frontRightWheel;
+	Talon* backRightWheel;
+
+	Joystick* stick;			// only joystick
+	OI* opIn;
+	MechanumDriveTrain* driveTrain;
 
 	/*
 	~Robot(){
@@ -31,23 +36,37 @@ private:
 
 public:
 
-	Robot() :
-		joystickChannel(0),
-		stick(joystickChannel),
-		opIn(stick),
-		driveTrain(frontLeftChannel, backLeftChannel,frontRightChannel,backRightChannel,opIn)
+	void RobotInit()
 	{
+		stick = new Joystick(joystickChannel);
+		opIn = new OI(stick);
+		frontLeftWheel = new Talon(frontLeftChannel);
+		backLeftWheel = new Talon(backLeftChannel);
+		frontRightWheel = new Talon(frontRightChannel);
+		backRightWheel = new Talon(backRightChannel);
+		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel,frontRightWheel,backRightWheel,opIn);
 
+	}
+
+	~Robot() {
+		delete driveTrain;
+		delete opIn;
+		delete stick;
+		delete frontLeftWheel;
+		delete backLeftWheel;
+		delete frontRightWheel;
+		delete backRightWheel;
 	}
 
 	void TeleopInit() {
 
 	}
 
-	void TelopPeriodic() {
-
-		driveTrain.Drive();
-		printf("test\n");
+	void TeleopPeriodic() {
+		driveTrain->Drive();
+		SmartDashboard::PutNumber("JoystickY",opIn->GetX());
+		SmartDashboard::PutNumber("JoystickX",opIn->GetY());
+		SmartDashboard::PutNumber("JoystickTwist",opIn->GetTwist());
 	}
 
 	void AutonomousInit() {
@@ -55,7 +74,7 @@ public:
 	}
 
 	void AutonomousPeriodic() {
-
+		std::cout<<"In Autonomous"<<std::endl;
 	}
 
 };
