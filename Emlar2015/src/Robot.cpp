@@ -21,9 +21,9 @@ private:
 	const uint32_t joystickChannel		= 0;
 
 	//PID Coefficients
-	double p = 0;
-	double i = 0;
-	double d = 0;
+	double p = 0.04;
+	double i = 0.00045;
+	double d = 0.1;
 
 	//Sensors+outputs
 	Talon* frontLeftWheel;
@@ -52,9 +52,11 @@ public:
 
 	void RobotInit()
 	{
+		/*
 		p=SmartDashboard::GetNumber("p");
 		i = SmartDashboard::GetNumber("i");
 		d = SmartDashboard::GetNumber("d");
+		*/
 
 		stick = new Joystick(joystickChannel);
 		opIn = new OI(stick);
@@ -88,11 +90,14 @@ public:
 	}
 
 	void TeleopInit() {
+		gyroPID->Enable();
+		gyroPID->SetSetpoint(0.0);
+		roboGyro->Reset();
 
 	}
 
 	void TeleopPeriodic() {
-		gyroPID->SetSetpoint(0);
+		driveTrain->Drive();
 		SmartDashboard::PutNumber("JoystickY",opIn->GetX());
 		SmartDashboard::PutNumber("JoystickX",opIn->GetY());
 		SmartDashboard::PutNumber("JoystickTwist",opIn->GetTwist());
@@ -105,6 +110,10 @@ public:
 	}
 
 	void AutonomousPeriodic() {
+	}
+
+	void DisabledInit() {
+		gyroPID->Disable();
 	}
 
 };

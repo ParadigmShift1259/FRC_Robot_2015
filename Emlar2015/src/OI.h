@@ -1,10 +1,7 @@
 /*
  * OI.h
- *
- *  Created on: Jan 17, 2015
- *      Author: Programming
  */
-#include "WPIlib.h"
+#include "WPILib.h"
 
 #ifndef SRC_OI_H_
 #define SRC_OI_H_

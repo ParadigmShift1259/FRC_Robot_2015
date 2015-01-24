@@ -8,7 +8,7 @@
 #ifndef SRC_ACCELTODISP_H_
 #define SRC_ACCELTODISP_H_
 
-#include "Wpilib.h"
+#include "WPILib.h"
 
 class AccelToDisp {
 private:

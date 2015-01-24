@@ -2,15 +2,12 @@
 #include "SmartDashboard/SmartDashboard.h"
 #include "LiveWindow/LiveWindow.h"
 #include "Gyro.h"
-#include "MechanumDriveTrain.h"
-
-
 
 GyroPID::GyroPID(double p, double i, double d, Gyro* roboGyro, MechanumDriveTrain* driveTrain) :
 		PIDSubsystem("GyroPID", p, i, d)
 {
-	this->roboGyro = roboGyro;
 	this->driveTrain = driveTrain;
+	this->roboGyro = roboGyro;
 	GetPIDController()->SetAbsoluteTolerance(0.4);
 
 	// Use these to get going:
@@ -21,7 +18,7 @@ GyroPID::GyroPID(double p, double i, double d, Gyro* roboGyro, MechanumDriveTrai
 
 double GyroPID::ReturnPIDInput()
 {
-	return roboGyro->GetAngle();
+	return -roboGyro->GetAngle();
 	// Return your input value for the PID loop
 	// e.g. a sensor, like a potentiometer:
 	// yourPot->SetAverageVoltage() / kYourMaxVoltage;	
@@ -30,7 +27,6 @@ double GyroPID::ReturnPIDInput()
 void GyroPID::UsePIDOutput(double output)
 {
 	driveTrain->SetGyroPIDOffset(output);
-	driveTrain->Drive();
 	// Use output to drive your system, like a motor
 	// e.g. yourMotor->Set(output);
 }

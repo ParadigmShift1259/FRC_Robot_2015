@@ -6,7 +6,7 @@
  */
 
 #include <AccelToDisp.h>
-#include "Wpilib.h"
+#include "WPILib.h"
 
 AccelToDisp::AccelToDisp(Accelerometer* accel) {
 	this->accel = accel;

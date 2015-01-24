@@ -22,4 +22,5 @@
 
 	void MechanumDriveTrain::SetGyroPIDOffset(double offset) {
 		gyroPIDOffset = offset;
+		SmartDashboard::PutNumber("GyroPIDOutput",offset);
 	}
