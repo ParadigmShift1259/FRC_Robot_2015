@@ -4,14 +4,15 @@
 #include "Commands/PIDSubsystem.h"
 #include "WPILib.h"
 #include "MechanumDriveTrain.h"
+#include "CorrectedGyro.h"
 
 class GyroPID: public PIDSubsystem
 {
 private:
-	Gyro* roboGyro;
+	CorrectedGyro* roboGyro;
 	MechanumDriveTrain* driveTrain;
 public:
-	GyroPID(double p, double i, double d, Gyro* roboGyro, MechanumDriveTrain* driveTrain);
+	GyroPID(double p, double i, double d, CorrectedGyro* roboGyro, MechanumDriveTrain* driveTrain);
 	double ReturnPIDInput();
 	void UsePIDOutput(double output);
 	void InitDefaultCommand();

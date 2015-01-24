@@ -16,7 +16,6 @@ private:
 	SpeedController* rearRightWheel;
 	OI* operatorInputs;
 	RobotDrive* robotDrive;	// robot drive system
-	Gyro* roboGyro;
 
 	/*
 	~MechanumDriveTrain() {
@@ -34,10 +33,8 @@ public:
 			SpeedController* backLeft,
 			SpeedController* frontRight,
 			SpeedController* backRight,
-			OI* oI,
-			Gyro* gyro)
+			OI* oI)
 	{
-			roboGyro = gyro;
 			operatorInputs = oI;
 			frontLeftWheel = frontLeft;
 			rearLeftWheel = backLeft;

@@ -1,10 +1,11 @@
 #include "WPILib.h"
-#include "Joystick.h"
 #include "OI.h"
 #include "MechanumDriveTrain.h"
 #include <stdio.h>
 #include "GyroPID.h"
 #include "AccelToDisp.h"
+#include "Thermister.h"
+#include "CorrectedGyro.h"
 
 /**
  * This is a demo program showing how to use Mechanum control with the RobotDrive class.
@@ -18,6 +19,7 @@ private:
 	const uint32_t frontRightChannel 	= 0;
 	const uint32_t backRightChannel 	= 3;
 	const uint32_t gyroChannel			= 0;
+	const uint32_t gyroThermChannel		= 1;
 	const uint32_t joystickChannel		= 0;
 
 	//PID Coefficients
@@ -31,7 +33,10 @@ private:
 	Talon* frontRightWheel;
 	Talon* backRightWheel;
 	Accelerometer* accelerometer;
-	Gyro* roboGyro;
+	AnalogInput* gyro;
+	AnalogInput* gyroThermister;
+	CorrectedGyro* roboGyro;
+
 	Joystick* stick;			//currently the only joystick
 
 	//Controlling Objects
@@ -40,13 +45,8 @@ private:
 	MechanumDriveTrain* driveTrain;
 	GyroPID* gyroPID;
 
-	/*
-	~Robot(){
-		delete driveTrain;
-		delete opIn;
-	}
-	*/
-
+	int count;
+	double gyroSum;
 
 public:
 
@@ -57,7 +57,6 @@ public:
 		i = SmartDashboard::GetNumber("i");
 		d = SmartDashboard::GetNumber("d");
 		*/
-
 		stick = new Joystick(joystickChannel);
 		opIn = new OI(stick);
 		frontLeftWheel = new Talon(frontLeftChannel);
@@ -65,24 +64,28 @@ public:
 		frontRightWheel = new Talon(frontRightChannel);
 		backRightWheel = new Talon(backRightChannel);
 		accelerometer = new BuiltInAccelerometer();
-		roboGyro = new Gyro(gyroChannel);
-		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel,frontRightWheel,backRightWheel,opIn,roboGyro);
+		gyro = new AnalogInput(gyroChannel);
+		gyroThermister = new AnalogInput(gyroThermChannel);
+		roboGyro = new CorrectedGyro(gyro,gyroThermister,2.5,0.3,0.7);
+		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel,frontRightWheel,backRightWheel,opIn);
 		gyroPID = new GyroPID(p,i,d,roboGyro,driveTrain);
 		accelToDisp = new AccelToDisp(accelerometer);
-
-		roboGyro->SetSensitivity(0.007);
-		roboGyro->SetDeadband(0.0014);
-		roboGyro->Reset();
 	}
 
 	~Robot() {
+		//gyro stuff
 		delete gyroPID;
+		delete roboGyro;
+		delete gyro;
+		delete gyroThermister;
+
 		delete accelToDisp;
 		delete driveTrain;
 		delete opIn;
 		delete stick;
-		delete roboGyro;
 		delete accelerometer;
+
+		//motors
 		delete frontLeftWheel;
 		delete backLeftWheel;
 		delete frontRightWheel;
@@ -107,13 +110,22 @@ public:
 	}
 
 	void AutonomousInit() {
+		count = 0;
+		gyroSum = 0;
+		gyroPID->Disable();
+		printf("Temp, Voltage");
 	}
 
 	void AutonomousPeriodic() {
+		count++;
+		gyroSum = gyroSum+(roboGyro->GetVoltage());
+		printf("%f, ",roboGyro->GetTemp());
+		printf("%f\n",roboGyro->GetVoltage());
+
 	}
 
 	void DisabledInit() {
-		gyroPID->Disable();
+		//gyroPID->Disable();
 	}
 
 };
