@@ -2,7 +2,7 @@
 #include "SmartDashboard/SmartDashboard.h"
 #include "LiveWindow/LiveWindow.h"
 
-GyroPID::GyroPID(double p, double i, double d, CorrectedGyro* roboGyro, MechanumDriveTrain* driveTrain) :
+GyroPID::GyroPID(double p, double i, double d, Gyro* roboGyro, MechanumDriveTrain* driveTrain) :
 		PIDSubsystem("GyroPID", p, i, d)
 {
 	this->driveTrain = driveTrain;

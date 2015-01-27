@@ -5,7 +5,7 @@
 #include "GyroPID.h"
 #include "AccelToDisp.h"
 #include "Thermister.h"
-#include "CorrectedGyro.h"
+//#include "CorrectedGyro.h"
 
 /**
  * This is a demo program showing how to use Mechanum control with the RobotDrive class.
@@ -33,9 +33,9 @@ private:
 	Talon* frontRightWheel;
 	Talon* backRightWheel;
 	Accelerometer* accelerometer;
-	AnalogInput* gyro;
-	AnalogInput* gyroThermister;
-	CorrectedGyro* roboGyro;
+	//AnalogInput* gyro;
+	//AnalogInput* gyroThermister;
+	Gyro* roboGyro;
 
 	Joystick* stick;			//currently the only joystick
 
@@ -64,20 +64,23 @@ public:
 		frontRightWheel = new Talon(frontRightChannel);
 		backRightWheel = new Talon(backRightChannel);
 		accelerometer = new BuiltInAccelerometer();
-		gyro = new AnalogInput(gyroChannel);
-		gyroThermister = new AnalogInput(gyroThermChannel);
-		roboGyro = new CorrectedGyro(gyro,gyroThermister,2.5,0.3,0.7);
+		//gyro = new AnalogInput(gyroChannel);
+		//gyroThermister = new AnalogInput(gyroThermChannel);
+		roboGyro = new Gyro(gyroChannel);
 		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel,frontRightWheel,backRightWheel,opIn);
 		gyroPID = new GyroPID(p,i,d,roboGyro,driveTrain);
 		accelToDisp = new AccelToDisp(accelerometer);
+		roboGyro->SetDeadband(0.2);
+		roboGyro->SetSensitivity(0.7);
+		roboGyro->Reset();
 	}
 
 	~Robot() {
 		//gyro stuff
 		delete gyroPID;
 		delete roboGyro;
-		delete gyro;
-		delete gyroThermister;
+		//delete gyro;
+		//delete gyroThermister;
 
 		delete accelToDisp;
 		delete driveTrain;
@@ -93,9 +96,9 @@ public:
 	}
 
 	void TeleopInit() {
+		//roboGyro->Reset();
 		gyroPID->Enable();
 		gyroPID->SetSetpoint(0.0);
-		roboGyro->Reset();
 
 	}
 
@@ -107,21 +110,27 @@ public:
 		SmartDashboard::PutNumber("GyroAngle",roboGyro->GetAngle());
 		SmartDashboard::PutNumber("GyroAngle",roboGyro->GetRate());
 		SmartDashboard::PutNumber("JoystickThrottle",opIn->GetThrottle());
+		printf("%f,GyroAngle",roboGyro->GetAngle());
+		printf("%f,GyroRate",roboGyro->GetRate());
 	}
 
-	void AutonomousInit() {
+	void TestInit() {
+		/*
 		count = 0;
 		gyroSum = 0;
 		gyroPID->Disable();
 		printf("Temp, Voltage");
+		*/
 	}
 
-	void AutonomousPeriodic() {
+	void TestPeriodic() {
+		/*
 		count++;
 		gyroSum = gyroSum+(roboGyro->GetVoltage());
 		printf("%f, ",roboGyro->GetTemp());
-		printf("%f\n",roboGyro->GetVoltage());
-
+		printf("%f,",roboGyro->GetVoltage());
+		printf("%f\n",roboGyro->GetAngle());
+		*/
 	}
 
 	void DisabledInit() {
