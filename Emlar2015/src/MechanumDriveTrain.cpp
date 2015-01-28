@@ -12,7 +12,7 @@
 		robotDrive->MecanumDrive_Cartesian(
 				operatorInputs->GetY(),
 				operatorInputs->GetX(),
-				gyroPIDOffset);
+				-operatorInputs->GetTwist());
 	}
 
 	void MechanumDriveTrain::SetGyroPIDOffset(double offset) {

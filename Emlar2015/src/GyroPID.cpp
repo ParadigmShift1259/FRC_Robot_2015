@@ -2,7 +2,7 @@
 #include "SmartDashboard/SmartDashboard.h"
 #include "LiveWindow/LiveWindow.h"
 
-GyroPID::GyroPID(double p, double i, double d, Gyro* roboGyro, MechanumDriveTrain* driveTrain) :
+GyroPID::GyroPID(double p, double i, double d, CorrectedGyro* roboGyro, MechanumDriveTrain* driveTrain) :
 		PIDSubsystem("GyroPID", p, i, d)
 {
 	this->driveTrain = driveTrain;
@@ -32,6 +32,10 @@ void GyroPID::UsePIDOutput(double output)
 
 void GyroPID::SetSetpoint(double setpoint) {
 	GetPIDController()->SetSetpoint(setpoint);
+}
+
+void GyroPID::Reset() {
+	GetPIDController()->Reset();
 }
 
 void GyroPID::InitDefaultCommand()

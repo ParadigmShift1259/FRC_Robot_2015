@@ -17,20 +17,21 @@ private:
 	double zero;
 	double deadzone;
 	double sensitivity;
-
+	double bits = 12;
 
 public:
-	CorrectedGyro(AnalogInput* gyro, AnalogInput* temp, double zero, double deadzone, double sensitivity);
+	CorrectedGyro(AnalogInput* gyro, AnalogInput* temp);
 	virtual ~CorrectedGyro();
 
 	double GetVoltage();
 	double GetAngle();
 	double GetRate();
 	double GetTemp();
-
+	double GetRawValue();
+	void Start();
 	void Reset();
 	void SetZeroVoltage(double zero);
-	void SetDeadzone(double deadzone);
+	void SetDeadband(double deadzone);
 	void SetSensitivity(double sensitivity);
 };
 

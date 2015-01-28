@@ -7,12 +7,16 @@
 
 #include <CorrectedGyro.h>
 
-CorrectedGyro::CorrectedGyro(AnalogInput* gyro, AnalogInput* temp ,double zero, double deadzone, double sensitivity) {
+CorrectedGyro::CorrectedGyro(AnalogInput* gyro, AnalogInput* temp) {
 	this->gyro = gyro;
 	this->temp = temp;
-	this->zero=zero;
-	this->deadzone = deadzone;
-	this->sensitivity = sensitivity;
+	this->zero=  gyro->GetValue();
+	this->deadzone = 3;
+	this->sensitivity = 0.007;
+	gyro->SetAccumulatorInitialValue(0.0);
+}
+
+void CorrectedGyro::Start() {
 	gyro->SetAccumulatorCenter(zero);
 	gyro->SetAccumulatorDeadband(deadzone);
 	gyro->InitAccumulator();
@@ -29,11 +33,13 @@ void CorrectedGyro::Reset() {
 }
 
 void CorrectedGyro::SetZeroVoltage(double zero) {
-	this->zero = zero;
+	//this->zero = zero*819.2;
+	gyro->SetAccumulatorCenter(zero);
 }
 
-void CorrectedGyro::SetDeadzone(double deadzone) {
+void CorrectedGyro::SetDeadband(double deadzone) {
 	this->deadzone = deadzone;
+	gyro->SetAccumulatorDeadband(deadzone);
 }
 
 void CorrectedGyro::SetSensitivity(double sensitivity) {
@@ -44,8 +50,15 @@ double CorrectedGyro::GetVoltage() {
 	return gyro->GetVoltage();
 }
 
+double CorrectedGyro::GetRawValue() {
+	return gyro->GetValue();
+}
+
 double CorrectedGyro::GetAngle() {
-	return gyro->GetAccumulatorValue()/sensitivity;
+	double value;
+	value = gyro->GetAccumulatorValue();
+	double volts = ((gyro->GetLSBWeight() * 10^-9) * value) - (gyro->GetOffset * 10^-9);
+	return volts/sensitivity;
 }
 
 double CorrectedGyro::GetRate() {
