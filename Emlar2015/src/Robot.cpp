@@ -80,7 +80,7 @@ public:
 		double averageValue = (roboGyro->GetRaw() + roboGyro->GetRaw() + roboGyro->GetRaw()+ roboGyro->GetRaw()+ roboGyro->GetRaw())/5;
 		roboGyro->SetZeroValue(averageValue);
 		roboGyro->SetSensitivity(0.007);
-		roboGyro->SetDeadband(5);
+		roboGyro->SetDeadband(4);
 		roboGyro->Reset();
 	}
 
@@ -143,7 +143,8 @@ public:
 	 * autonomous mode loop
 	 */
 	void AutonomousPeriodic() {
-		printf("%f\n",roboGyro->GetAngle());
+		printf("%f Angle=\n",roboGyro->GetAngle());
+		printf("%f Raw=\n",roboGyro->GetRaw());
 	}
 
 	/*

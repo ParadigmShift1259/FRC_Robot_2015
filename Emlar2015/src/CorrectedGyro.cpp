@@ -15,7 +15,7 @@ CorrectedGyro::CorrectedGyro(AnalogInput* gyro, AnalogInput* temp) {
 	zero = 4096.0/2.0;
 	sensitivity = 0.007;
 	this->sensitivity = sensitivity;
-	gyro->SetOversampleBits(10);
+	gyro->SetOversampleBits(0);
 	gyro->SetAverageBits(10);
 	gyro->SetSampleRate(62500);
 	gyro->SetAccumulatorCenter(zero);
@@ -55,15 +55,15 @@ void CorrectedGyro::SetSensitivity(double sensitivity) {
 }
 
 double CorrectedGyro::GetVoltage() {
-	return gyro->GetVoltage();
+	return gyro->GetAverageVoltage();
 }
 
 double CorrectedGyro::GetAngle() {
-	return gyro->GetAccumulatorValue()*5/(sensitivity*maxNum*sampleRate*averageNumSize);
+	return gyro->GetAccumulatorValue()*averageNumSize*5/(sensitivity*sampleRate*maxNum);
 }
 
 double CorrectedGyro::GetRaw() {
-	return gyro->GetValue();
+	return gyro->GetAverageValue();
 }
 
 double CorrectedGyro::GetRate() {
