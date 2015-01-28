@@ -7,15 +7,21 @@
 
 #include <CorrectedGyro.h>
 
-CorrectedGyro::CorrectedGyro(AnalogInput* gyro, AnalogInput* temp ,double zero, double deadzone, double sensitivity) {
+CorrectedGyro::CorrectedGyro(AnalogInput* gyro, AnalogInput* temp) {
 	this->gyro = gyro;
 	this->temp = temp;
 	this->zero=zero;
-	this->deadzone = deadzone;
+	deadband = 4096.0*.014/5;
+	zero = 4096.0/2.0;
+	sensitivity = 0.007;
 	this->sensitivity = sensitivity;
+	gyro->SetOversampleBits(10);
+	gyro->SetAverageBits(10);
+	gyro->SetSampleRate(62500);
 	gyro->SetAccumulatorCenter(zero);
-	gyro->SetAccumulatorDeadband(deadzone);
+	gyro->SetAccumulatorDeadband(deadband);
 	gyro->InitAccumulator();
+	Reset();
 }
 
 double CorrectedGyro::GetTemp() {
@@ -25,15 +31,23 @@ double CorrectedGyro::GetTemp() {
 }
 
 void CorrectedGyro::Reset() {
+	int overSampleBits = gyro->GetOversampleBits();
+	maxNum = 2^(overSampleBits);
+	averageNumSize = 2^gyro->GetAverageBits();
+	sampleRate = gyro->GetSampleRate();
 	gyro->ResetAccumulator();
 }
 
-void CorrectedGyro::SetZeroVoltage(double zero) {
-	this->zero = zero;
+void CorrectedGyro::SetZeroValue(double value) {
+	this->zero = value;
+	gyro->SetAccumulatorCenter(value);
+	Reset();
 }
 
-void CorrectedGyro::SetDeadzone(double deadzone) {
-	this->deadzone = deadzone;
+void CorrectedGyro::SetDeadband(double deadband) {
+	this->deadband = deadband;
+	gyro->SetAccumulatorDeadband(deadband);
+	Reset();
 }
 
 void CorrectedGyro::SetSensitivity(double sensitivity) {
@@ -45,7 +59,11 @@ double CorrectedGyro::GetVoltage() {
 }
 
 double CorrectedGyro::GetAngle() {
-	return gyro->GetAccumulatorValue()/sensitivity;
+	return gyro->GetAccumulatorValue()*5/(sensitivity*maxNum*sampleRate*averageNumSize);
+}
+
+double CorrectedGyro::GetRaw() {
+	return gyro->GetValue();
 }
 
 double CorrectedGyro::GetRate() {

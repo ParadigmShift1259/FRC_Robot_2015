@@ -12,6 +12,7 @@
 
 OI::OI(Joystick* mainJoystick2) {
 	mainJoystick = mainJoystick2;
+
 }
 double OI::GetX() {
 	double currentX = (mainJoystick->GetX()/OI::GetThrottle());
