@@ -79,6 +79,10 @@ bool OI::GetTrigger() {
 	return triggerState;
 }
 
+bool OI::GetAmazingButton(){
+	return mainJoystick->GetRawButton(amazingButton);
+}
+
 double OI::GetThrottle() {
 	return mainJoystick->GetThrottle()+2.1;
 }
