@@ -33,7 +33,7 @@ double CorrectedGyro::GetTemp() {
 void CorrectedGyro::Reset() {
 	int overSampleBits = gyro->GetOversampleBits();
 	maxNum = 1<<(overSampleBits);
-	averageNumSize = 1<<gyro->GetAverageBits();
+	averageNumSize = 1<<(gyro->GetAverageBits()-1);
 	sampleRate = gyro->GetSampleRate();
 	gyro->ResetAccumulator();
 }
@@ -59,7 +59,7 @@ double CorrectedGyro::GetVoltage() {
 }
 
 double CorrectedGyro::GetAngle() {
-	return gyro->GetAccumulatorValue()*5.0/(sensitivity*sampleRate*averageNumSize*.5);
+	return gyro->GetAccumulatorValue()*5.0/(sensitivity*sampleRate*averageNumSize);
 }
 
 double CorrectedGyro::GetRaw() {
