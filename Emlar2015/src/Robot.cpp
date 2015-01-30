@@ -4,8 +4,8 @@
 #include "MechanumDriveTrain.h"
 #include <stdio.h>
 #include "GyroPID.h"
-#include "AccelToDisp.h"
 #include "CorrectedGyro.h"
+#include "AccelPID.h"
 
 /**
  * This is a demo program showing how to use Mechanum control with the RobotDrive class.
@@ -29,6 +29,11 @@ private:
 	double gyroI = 0.00045;
 	double gyroD = 0.1;
 
+	double accelStraifP = .1;
+	double accelStraifI = .0;
+	double accelStraifD = .0;
+
+
 	//inputs
 	Accelerometer* accelerometer;
 	AnalogInput* therm;
@@ -40,13 +45,13 @@ private:
 	Talon* backLeftWheel;
 	Talon* frontRightWheel;
 	Talon* backRightWheel;
-	Compressor* compressor;
+	//Compressor* compressor;
 
 	//Controlling Objects
-	AccelToDisp* accelToDisp;
 	OI* opIn;
 	MechanumDriveTrain* driveTrain;
 	GyroPID* gyroPID;
+	AccelPID* accelPID;
 	CorrectedGyro* roboGyro;
 
 public:
@@ -60,27 +65,27 @@ public:
 		accelerometer = new BuiltInAccelerometer();
 
 		//outputs
-		compressor = new Compressor(compressorChannel);
+		//compressor = new Compressor(compressorChannel);
 		frontLeftWheel = new Talon(frontLeftChannel);
 		backLeftWheel = new Talon(backLeftChannel);
 		frontRightWheel = new Talon(frontRightChannel);
 		backRightWheel = new Talon(backRightChannel);
 
 		//wpilib class setup
-		compressor->SetClosedLoopControl(true);
+		//compressor->SetClosedLoopControl(true);
 
 		//user generated classes
+		opIn = new OI(stick);
 		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel,frontRightWheel,backRightWheel,opIn);
 		roboGyro = new CorrectedGyro(gyro,therm);
 		gyroPID = new GyroPID(gyroP,gyroI,gyroD,roboGyro,driveTrain);
-		opIn = new OI(stick);
-		accelToDisp = new AccelToDisp(accelerometer);
+		accelPID = new AccelPID(accelStraifP,accelStraifI,accelStraifD,accelerometer,driveTrain);
 
 		//user generated classes setup
 		double averageValue = (roboGyro->GetRaw() + roboGyro->GetRaw() + roboGyro->GetRaw()+ roboGyro->GetRaw()+ roboGyro->GetRaw())/5;
 		roboGyro->SetZeroValue(averageValue);
 		roboGyro->SetSensitivity(0.007);
-		roboGyro->SetDeadband(4);
+		roboGyro->SetDeadband(5);
 		roboGyro->Reset();
 	}
 
@@ -96,12 +101,12 @@ public:
 		delete backLeftWheel;
 		delete frontRightWheel;
 		delete backRightWheel;
-		delete compressor;
+		//delete compressor;
 
 		//user generated classes
 		delete gyroPID;
+		delete accelPID;
 		delete roboGyro;
-		delete accelToDisp;
 		delete driveTrain;
 		delete opIn;
 	}
@@ -110,10 +115,13 @@ public:
 	 * preps for the human operated mode
 	 */
 	void TeleopInit() {
+		printf("TeleopInit \n");
 		roboGyro->Reset(); //resets the Gyro
-		gyroPID->Enable(); //enables PID
-		gyroPID->SetSetpoint(0.0); //sets the setpoint to zero
-		compressor->Enabled(); //enables compressor
+		//gyroPID->Enable(); //enables PID
+		//gyroPID->SetSetpoint(0.0); //sets the setpoint to zero
+		accelPID->Enable();
+		accelPID->SetSetpoint(0.0);
+		//compressor->Enabled(); //enables compressor
 
 	}
 
@@ -121,8 +129,9 @@ public:
 	 * human operated mode loop
 	 */
 	void TeleopPeriodic() {
+		printf("InTeleop\n");
 		driveTrain->Drive(); //tells the robot to drive
-		compressor->Enabled(); //enables the compressor
+		//compressor->Enabled(); //enables the compressor
 
 		//put numbers to the smart dashboard for diagnostics
 		SmartDashboard::PutNumber("JoystickY",opIn->GetX());
@@ -137,22 +146,29 @@ public:
 	 * preps for autonomous mode
 	 */
 	void AutonomousInit() {
+		roboGyro->Reset();
+		//compressor->Enabled();
 	}
 
 	/*
 	 * autonomous mode loop
 	 */
 	void AutonomousPeriodic() {
-		printf("%f Angle=\n",roboGyro->GetAngle());
-		printf("%f Raw=\n",roboGyro->GetRaw());
+		printf("Angle= %f\n",roboGyro->GetAngle());
+		printf("Raw= %f\n",roboGyro->GetRaw());
+		//compressor->Enabled();
+		while(IsAutonomous()) {
+		}
 	}
 
 	/*
 	 * preps for switch to disabled
 	 */
 	void DisabledInit() {
+		//compressor->SetClosedLoopControl(false);
+		accelPID->Reset();
+		accelPID->Disable();
 		gyroPID->Disable(); //stops the gyro PID
-		compressor->SetClosedLoopControl(false);
 	}
 
 };

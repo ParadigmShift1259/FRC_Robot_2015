@@ -10,6 +10,9 @@
 
 class MechanumDriveTrain {
 private:
+	double gyroPIDOffset=0;
+	double accelPIDOffset=0;
+
 	SpeedController* frontLeftWheel;
 	SpeedController* rearLeftWheel;
 	SpeedController* frontRightWheel;
@@ -26,7 +29,6 @@ private:
 
 public:
 
-	double gyroPIDOffset=0;
 
 	MechanumDriveTrain(
 			SpeedController* frontLeft,
@@ -48,7 +50,8 @@ public:
 		}
 	void Drive();
 
-	void SetGyroPIDOffset(double offset);
+	void SetGyroOffset(double offset);
+	void SetAccelOffset(double offset);
 
 };
 

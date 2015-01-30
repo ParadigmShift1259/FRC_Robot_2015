@@ -25,7 +25,7 @@ double GyroPID::ReturnPIDInput()
 
 void GyroPID::UsePIDOutput(double output)
 {
-	driveTrain->SetGyroPIDOffset(output);
+	driveTrain->SetGyroOffset(output);
 	// Use output to drive your system, like a motor
 	// e.g. yourMotor->Set(output);
 }
