@@ -6,6 +6,7 @@
 #include "GyroPID.h"
 #include "CorrectedGyro.h"
 #include "AccelPID.h"
+#include "Vacuum.h"
 
 /**
  * This is a demo program showing how to use Mechanum control with the RobotDrive class.
@@ -14,13 +15,21 @@ class Robot: public IterativeRobot
 {
 
 private:
-    // Channels for the sensors, wheels, and joystick
+    // Channels for the motors
 	const uint32_t frontLeftChannel		= 2;
 	const uint32_t backLeftChannel 		= 1;
 	const uint32_t frontRightChannel 	= 0;
 	const uint32_t backRightChannel 	= 3;
+	const uint32_t vacuumMotor1Channel	= 4;
+
+	//channels for analog sensors
 	const uint32_t gyroChannel			= 0;
 	const uint32_t gyroThermChannel		= 1;
+	const uint32_t vacuumSensor1Channel	= 2;
+
+	//channels for digital sensors
+
+	//channels for other things
 	const uint32_t joystickChannel		= 0;
 	const uint32_t compressorChannel    = 0;
 
@@ -35,9 +44,11 @@ private:
 
 
 	//inputs
+	PowerDistributionPanel* pdp;
 	Accelerometer* accelerometer;
 	AnalogInput* therm;
 	AnalogInput* gyro;
+	AnalogInput* vacuumSensor1;
 	Joystick* stick;			//currently the only joystick
 
 	//outputs
@@ -45,9 +56,11 @@ private:
 	Talon* backLeftWheel;
 	Talon* frontRightWheel;
 	Talon* backRightWheel;
+	Talon* vacuumMotor1;
 	//Compressor* compressor;
 
 	//Controlling Objects
+	Vacuum* vacuum1;
 	OI* opIn;
 	MechanumDriveTrain* driveTrain;
 	GyroPID* gyroPID;
@@ -59,10 +72,12 @@ public:
 	void RobotInit()
 	{
 		//inputs
+		pdp = new PowerDistributionPanel();
 		therm = new AnalogInput(gyroThermChannel);
 		gyro = new AnalogInput(gyroChannel);
 		stick = new Joystick(joystickChannel);
 		accelerometer = new BuiltInAccelerometer();
+		vacuumSensor1 = new AnalogInput(vacuumSensor1Channel);
 
 		//outputs
 		//compressor = new Compressor(compressorChannel);
@@ -70,11 +85,13 @@ public:
 		backLeftWheel = new Talon(backLeftChannel);
 		frontRightWheel = new Talon(frontRightChannel);
 		backRightWheel = new Talon(backRightChannel);
+		vacuumMotor1 = new Talon(vacuumMotor1Channel);
 
 		//wpilib class setup
 		//compressor->SetClosedLoopControl(true);
 
 		//user generated classes
+		vacuum1 = new Vacuum(vacuumSensor1, vacuumMotor1);
 		opIn = new OI(stick);
 		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel,frontRightWheel,backRightWheel,opIn);
 		roboGyro = new CorrectedGyro(gyro,therm);
@@ -95,12 +112,14 @@ public:
 		delete gyro;
 		delete stick;
 		delete accelerometer;
+		delete vacuumSensor1;
 
 		//outputs
 		delete frontLeftWheel;
 		delete backLeftWheel;
 		delete frontRightWheel;
 		delete backRightWheel;
+		delete vacuumMotor1;
 		//delete compressor;
 
 		//user generated classes
@@ -109,6 +128,7 @@ public:
 		delete roboGyro;
 		delete driveTrain;
 		delete opIn;
+		delete vacuum1;
 	}
 
 	/*
@@ -129,6 +149,7 @@ public:
 	 * human operated mode loop
 	 */
 	void TeleopPeriodic() {
+		vacuum1->Start();
 		printf("InTeleop\n");
 		driveTrain->Drive(); //tells the robot to drive
 		//compressor->Enabled(); //enables the compressor
@@ -169,6 +190,7 @@ public:
 		accelPID->Reset();
 		accelPID->Disable();
 		gyroPID->Disable(); //stops the gyro PID
+		vacuum1->Stop();
 	}
 
 };
