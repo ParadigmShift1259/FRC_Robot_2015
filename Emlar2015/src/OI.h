@@ -11,7 +11,6 @@ private:
 double y = 0;
 double x = 0;
 double twist = 0;
-
 bool lastTriggered = false;
 bool triggerState = false;
 
@@ -32,8 +31,10 @@ double GetX();
 double GetY();
 double GetTwist();
 bool GetTrigger();
+//bool GetButton10();
 double GetThrottle();
 Joystick* GetJoystick() const;
+//bool button10;
 /*
 OI(const OI& rhs){
 	y=(rhs.getY());

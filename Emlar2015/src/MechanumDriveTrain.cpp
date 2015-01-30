@@ -8,19 +8,25 @@
 #include <iostream>
 
 	void MechanumDriveTrain::Drive() {
-		if(operatorInputs->GetTrigger())
-		{
-			robotDrive->SetMaxOutput(0.5);
-		} else {
-			robotDrive->SetMaxOutput(1.0);
-		}
+		double y = operatorInputs->GetY();
+		double twist = -operatorInputs->GetTwist();
+		printf("Got OI Values\n");
+
+		printf("Just Before Driving\n");
 		robotDrive->MecanumDrive_Cartesian(
-				operatorInputs->GetY(),
-				operatorInputs->GetX(),
-				gyroPIDOffset);
+				y,
+				accelPIDOffset,
+				//gyroPIDOffset
+				twist);
+		printf("Driving\n");
 	}
 
-	void MechanumDriveTrain::SetGyroPIDOffset(double offset) {
+	void MechanumDriveTrain::SetAccelOffset(double offset){
+		accelPIDOffset = offset;
+		printf("SettingAccelOffset\n");
+	}
+
+	void MechanumDriveTrain::SetGyroOffset(double offset) {
 		gyroPIDOffset = offset;
 		SmartDashboard::PutNumber("GyroPIDOutput",offset);
 	}

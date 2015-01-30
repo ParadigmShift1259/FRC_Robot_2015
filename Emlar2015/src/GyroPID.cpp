@@ -1,9 +1,8 @@
 #include "GyroPID.h"
 #include "SmartDashboard/SmartDashboard.h"
 #include "LiveWindow/LiveWindow.h"
-#include "Gyro.h"
 
-GyroPID::GyroPID(double p, double i, double d, Gyro* roboGyro, MechanumDriveTrain* driveTrain) :
+GyroPID::GyroPID(double p, double i, double d, CorrectedGyro* roboGyro, MechanumDriveTrain* driveTrain) :
 		PIDSubsystem("GyroPID", p, i, d)
 {
 	this->driveTrain = driveTrain;
@@ -26,7 +25,7 @@ double GyroPID::ReturnPIDInput()
 
 void GyroPID::UsePIDOutput(double output)
 {
-	driveTrain->SetGyroPIDOffset(output);
+	driveTrain->SetGyroOffset(output);
 	// Use output to drive your system, like a motor
 	// e.g. yourMotor->Set(output);
 }

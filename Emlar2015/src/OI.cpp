@@ -10,8 +10,9 @@
  *      Author: Programming
  */
 
-OI::OI(Joystick* mainJoystick2) {
-	mainJoystick = mainJoystick2;
+OI::OI(Joystick* mainJoystick) {
+	this->mainJoystick = mainJoystick;
+
 }
 double OI::GetX() {
 	double currentX = (mainJoystick->GetX()/OI::GetThrottle());

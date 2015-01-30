@@ -10,13 +10,15 @@
 
 class MechanumDriveTrain {
 private:
+	double gyroPIDOffset=0;
+	double accelPIDOffset=0;
+
 	SpeedController* frontLeftWheel;
 	SpeedController* rearLeftWheel;
 	SpeedController* frontRightWheel;
 	SpeedController* rearRightWheel;
 	OI* operatorInputs;
 	RobotDrive* robotDrive;	// robot drive system
-	Gyro* roboGyro;
 
 	/*
 	~MechanumDriveTrain() {
@@ -27,17 +29,14 @@ private:
 
 public:
 
-	double gyroPIDOffset=0;
 
 	MechanumDriveTrain(
 			SpeedController* frontLeft,
 			SpeedController* backLeft,
 			SpeedController* frontRight,
 			SpeedController* backRight,
-			OI* oI,
-			Gyro* gyro)
+			OI* oI)
 	{
-			roboGyro = gyro;
 			operatorInputs = oI;
 			frontLeftWheel = frontLeft;
 			rearLeftWheel = backLeft;
@@ -51,7 +50,8 @@ public:
 		}
 	void Drive();
 
-	void SetGyroPIDOffset(double offset);
+	void SetGyroOffset(double offset);
+	void SetAccelOffset(double offset);
 
 };
 
