@@ -19,6 +19,7 @@ const double shiftPerCycle = .01;
 
 const double deadzone = 0.1;
 const double twistDeadzone = 0.13;
+const int amazingButton = 9;
 Joystick* mainJoystick;
 
 /*
@@ -32,6 +33,7 @@ double GetX();
 double GetY();
 double GetTwist();
 bool GetTrigger();
+bool GetAmazingButton();
 double GetThrottle();
 Joystick* GetJoystick() const;
 /*
