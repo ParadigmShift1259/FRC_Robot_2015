@@ -15,8 +15,8 @@ CorrectedGyro::CorrectedGyro(AnalogInput* gyro, AnalogInput* temp) {
 	zero = 4096.0/2.0;
 	sensitivity = 0.007;
 	this->sensitivity = sensitivity;
-	gyro->SetOversampleBits(0);
-	gyro->SetAverageBits(10);
+	gyro->SetOversampleBits(8);
+	gyro->SetAverageBits(8);
 	gyro->SetSampleRate(62500);
 	gyro->SetAccumulatorCenter(zero);
 	gyro->SetAccumulatorDeadband(deadband);
@@ -32,7 +32,7 @@ double CorrectedGyro::GetTemp() {
 
 void CorrectedGyro::Reset() {
 	int overSampleBits = gyro->GetOversampleBits();
-	maxNum = 1<<(overSampleBits);
+	maxNum = 1<<(overSampleBits-1);
 	averageNumSize = 1<<(gyro->GetAverageBits()-1);
 	sampleRate = gyro->GetSampleRate();
 	gyro->ResetAccumulator();

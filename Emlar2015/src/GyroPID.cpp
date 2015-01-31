@@ -7,7 +7,6 @@ GyroPID::GyroPID(double p, double i, double d, CorrectedGyro* roboGyro, Mechanum
 {
 	this->driveTrain = driveTrain;
 	this->roboGyro = roboGyro;
-	GetPIDController()->SetAbsoluteTolerance(0.4);
 
 	// Use these to get going:
 	// SetSetpoint() -  Sets where the PID controller should move the system

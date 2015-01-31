@@ -40,16 +40,16 @@ private:
 	int count = 0;
 
 	//PID Coefficients
-	double gyroP = 0.04;
-	double gyroI = 0.00045;
+	double gyroP = 0.6;
+	double gyroI = 0.00005;
 	double gyroD = 0.1;
 
 	double accelStraifP = 0.0;
-	double accelStraifI = 0.1;
+	double accelStraifI = 0.01;
 	double accelStraifD = 0.0;
 
 	double accelStraightP = 0.0;
-	double accelStraightI = 0.1;
+	double accelStraightI = 0.01;
 	double accelStraightD = 0.0;
 
 
@@ -192,11 +192,14 @@ public:
 	 * autonomous mode loop
 	 */
 	void AutonomousPeriodic() {
+
+		SmartDashboard::PutNumber("GyroValue",gyro->GetValue());
+		SmartDashboard::PutNumber("GyroAngle",roboGyro->GetAngle());
 		switch(currentAutoOperation){
 		case 0:
-			driveTrain->DriveForward(.75); //needs to be changed to distances
+			driveTrain->DriveForward(.3*(count)/40.0); //needs to be changed to distances
 			count++;
-			if((count/20)==3)
+			if((count/20)==20)
 			{
 				count =0;
 				currentAutoOperation++;
@@ -212,9 +215,9 @@ public:
 			}
 			break;
 		case 2:
-			driveTrain->DriveForward(.75); //needs to be changed to distances
+			driveTrain->DriveForward(.3*(count)/40.0); //needs to be changed to distances
 			count++;
-			if((count/20)==3)
+			if((count/20)==20)
 			{
 				count =0;
 				currentAutoOperation++;
@@ -230,7 +233,7 @@ public:
 			}
 			break;
 		case 4:
-			driveTrain->DriveRight(.75); //needs to be changed to distances
+			//driveTrain->DriveRight(.25); //needs to be changed to distances
 			count++;
 			if((count/20)==3)
 			{
@@ -261,6 +264,7 @@ public:
 		yAccelPID->Disable();
 		gyroPID->Disable(); //stops the gyro PID
 		vacuum1->Stop();
+		currentAutoOperation = 0;
 	}
 
 };
