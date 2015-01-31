@@ -10,13 +10,14 @@
 #include "LiveWindow/LiveWindow.h"
 
 AccelPID::AccelPID(double p, double i, double d, Accelerometer* accel,
-		MechanumDriveTrain* driveTrain) :
+		MechanumDriveTrain* driveTrain, int axis) : //axis: 1=x, 2=y, 3=z
 		PIDSubsystem("AccelPID", p, i, d) {
 	this->p = p;
 	this->i = i;
 	this->d = d;
 	this->accel = accel;
 	this->driveTrain = driveTrain;
+	this->axis = axis;
 	SetSetpoint(0.0);
 	Enable();
 
@@ -39,11 +40,27 @@ void AccelPID::UsePIDOutput(double output) {
 }
 
 double AccelPID::ReturnPIDInput() {
-	return accel->GetX();
+	double input = 0;
+	switch (axis) {
+	case 1:
+		input = accel->GetX();
+		break;
+	case 2:
+		input = accel->GetY();
+		break;
+	case 3:
+		input = accel->GetZ();
+		break;
+	}
+	return input;
 }
 
 void AccelPID::InitDefaultCommand() {
 
+}
+
+void AccelPID::Disable() {
+	GetPIDController()->Disable();
 }
 
 AccelPID::~AccelPID() {

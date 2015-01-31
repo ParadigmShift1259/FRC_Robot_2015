@@ -33,14 +33,23 @@ private:
 	const uint32_t joystickChannel		= 0;
 	const uint32_t compressorChannel    = 0;
 
+	//booleans for Autonomous
+	bool driveStraightForward;
+	bool driveStraightSideways;
+	int currentAutoOperation = 0;
+
 	//PID Coefficients
 	double gyroP = 0.04;
 	double gyroI = 0.00045;
 	double gyroD = 0.1;
 
-	double accelStraifP = .1;
-	double accelStraifI = .0;
-	double accelStraifD = .0;
+	double accelStraifP = 0.0;
+	double accelStraifI = 0.1;
+	double accelStraifD = 0.0;
+
+	double accelStraightP = 0.0;
+	double accelStraightI = 0.1;
+	double accelStraightD = 0.0;
 
 
 	//inputs
@@ -64,7 +73,8 @@ private:
 	OI* opIn;
 	MechanumDriveTrain* driveTrain;
 	GyroPID* gyroPID;
-	AccelPID* accelPID;
+	AccelPID* xAccelPID;
+	AccelPID* yAccelPID;
 	CorrectedGyro* roboGyro;
 
 public:
@@ -96,7 +106,8 @@ public:
 		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel,frontRightWheel,backRightWheel,opIn);
 		roboGyro = new CorrectedGyro(gyro,therm);
 		gyroPID = new GyroPID(gyroP,gyroI,gyroD,roboGyro,driveTrain);
-		accelPID = new AccelPID(accelStraifP,accelStraifI,accelStraifD,accelerometer,driveTrain);
+		xAccelPID = new AccelPID(accelStraifP,accelStraifI,accelStraifD,accelerometer,driveTrain,1);
+		yAccelPID = new AccelPID(accelStraightP,accelStraightI,accelStraightD,accelerometer,driveTrain,2);
 
 		//user generated classes setup
 		double averageValue = (roboGyro->GetRaw() + roboGyro->GetRaw() + roboGyro->GetRaw()+ roboGyro->GetRaw()+ roboGyro->GetRaw())/5;
@@ -124,7 +135,8 @@ public:
 
 		//user generated classes
 		delete gyroPID;
-		delete accelPID;
+		delete xAccelPID;
+		delete yAccelPID;
 		delete roboGyro;
 		delete driveTrain;
 		delete opIn;
@@ -137,10 +149,8 @@ public:
 	void TeleopInit() {
 		printf("TeleopInit \n");
 		roboGyro->Reset(); //resets the Gyro
-		//gyroPID->Enable(); //enables PID
-		//gyroPID->SetSetpoint(0.0); //sets the setpoint to zero
-		accelPID->Enable();
-		accelPID->SetSetpoint(0.0);
+		gyroPID->Enable(); //enables PID
+		gyroPID->SetSetpoint(0.0); //sets the setpoint to zero
 		//compressor->Enabled(); //enables compressor
 
 	}
@@ -168,6 +178,9 @@ public:
 	 */
 	void AutonomousInit() {
 		roboGyro->Reset();
+		xAccelPID->Enable();
+		xAccelPID->SetSetpoint(0.0);
+		yAccelPID->SetSetpoint(0.0);
 		//compressor->Enabled();
 	}
 
@@ -175,10 +188,19 @@ public:
 	 * autonomous mode loop
 	 */
 	void AutonomousPeriodic() {
-		printf("Angle= %f\n",roboGyro->GetAngle());
-		printf("Raw= %f\n",roboGyro->GetRaw());
-		//compressor->Enabled();
-		while(IsAutonomous()) {
+		switch(currentAutoOperation){
+		case 0:
+
+			break;
+		case 1:
+
+			break;
+		case 2:
+
+			break;
+		case 3:
+
+			break;
 		}
 	}
 
@@ -187,8 +209,10 @@ public:
 	 */
 	void DisabledInit() {
 		//compressor->SetClosedLoopControl(false);
-		accelPID->Reset();
-		accelPID->Disable();
+		xAccelPID->Reset();
+		xAccelPID->Disable();
+		yAccelPID->Reset();
+		yAccelPID->Disable();
 		gyroPID->Disable(); //stops the gyro PID
 		vacuum1->Stop();
 	}

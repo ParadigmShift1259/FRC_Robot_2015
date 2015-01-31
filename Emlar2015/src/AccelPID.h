@@ -18,17 +18,19 @@ private:
 	double p;
 	double i;
 	double d;
+	int axis;
 
 	Accelerometer* accel;
 	MechanumDriveTrain* driveTrain;
 public:
-	AccelPID(double p, double i, double d, Accelerometer* accel, MechanumDriveTrain* driveTrain);
+	AccelPID(double p, double i, double d, Accelerometer* accel, MechanumDriveTrain* driveTrain, int axis);
 	double ReturnPIDInput();
 	void UsePIDOutput(double output);
 	void InitDefaultCommand();
 	void Enable();
 	void SetSetpoint(double setpoint);
 	void Reset();
+	void Disable();
 	virtual ~AccelPID();
 };
 

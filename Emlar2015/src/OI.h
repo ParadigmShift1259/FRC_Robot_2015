@@ -20,36 +20,14 @@ const double deadzone = 0.1;
 const double twistDeadzone = 0.13;
 Joystick* mainJoystick;
 
-/*
-~OI() {
-	delete Joystick;
-}
-*/
 public:
 OI(Joystick*);
 double GetX();
 double GetY();
 double GetTwist();
 bool GetTrigger();
-//bool GetButton10();
 double GetThrottle();
 Joystick* GetJoystick() const;
-//bool button10;
-/*
-OI(const OI& rhs){
-	y=(rhs.getY());
-	x=(rhs.getX());
-	twist=(rhs.getTwist());
-	mainJoystick=(rhs.getJoystick());
-}
-OI& operator=(const OI& rhs) {
-	y=(rhs.getY());
-	x=(rhs.getX());
-	twist=(rhs.getTwist());
-	mainJoystick=(rhs.getJoystick());
-	return *this;
-}
-*/
 };
 
 
