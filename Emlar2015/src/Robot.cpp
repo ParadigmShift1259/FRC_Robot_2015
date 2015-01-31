@@ -1,7 +1,7 @@
+#include <MecanumDriveTrain.h>
 #include "WPILib.h"
 #include "Joystick.h"
 #include "OI.h"
-#include "MechanumDriveTrain.h"
 #include <stdio.h>
 #include "GyroPID.h"
 #include "CorrectedGyro.h"
@@ -37,6 +37,7 @@ private:
 	bool driveStraightForward;
 	bool driveStraightSideways;
 	int currentAutoOperation = 0;
+	int count = 0;
 
 	//PID Coefficients
 	double gyroP = 0.04;
@@ -66,7 +67,7 @@ private:
 	Talon* frontRightWheel;
 	Talon* backRightWheel;
 	Talon* vacuumMotor1;
-	//Compressor* compressor;
+	Compressor* compressor;
 
 	//Controlling Objects
 	Vacuum* vacuum1;
@@ -90,7 +91,7 @@ public:
 		vacuumSensor1 = new AnalogInput(vacuumSensor1Channel);
 
 		//outputs
-		//compressor = new Compressor(compressorChannel);
+		compressor = new Compressor(compressorChannel);
 		frontLeftWheel = new Talon(frontLeftChannel);
 		backLeftWheel = new Talon(backLeftChannel);
 		frontRightWheel = new Talon(frontRightChannel);
@@ -98,7 +99,7 @@ public:
 		vacuumMotor1 = new Talon(vacuumMotor1Channel);
 
 		//wpilib class setup
-		//compressor->SetClosedLoopControl(true);
+		compressor->SetClosedLoopControl(true);
 
 		//user generated classes
 		vacuum1 = new Vacuum(vacuumSensor1, vacuumMotor1);
@@ -131,7 +132,7 @@ public:
 		delete frontRightWheel;
 		delete backRightWheel;
 		delete vacuumMotor1;
-		//delete compressor;
+		delete compressor;
 
 		//user generated classes
 		delete gyroPID;
@@ -151,7 +152,7 @@ public:
 		roboGyro->Reset(); //resets the Gyro
 		gyroPID->Enable(); //enables PID
 		gyroPID->SetSetpoint(0.0); //sets the setpoint to zero
-		//compressor->Enabled(); //enables compressor
+		compressor->SetClosedLoopControl(true);
 
 	}
 
@@ -162,7 +163,6 @@ public:
 		vacuum1->Start();
 		printf("InTeleop\n");
 		driveTrain->Drive(); //tells the robot to drive
-		//compressor->Enabled(); //enables the compressor
 
 		//put numbers to the smart dashboard for diagnostics
 		SmartDashboard::PutNumber("JoystickY",opIn->GetX());
@@ -171,6 +171,8 @@ public:
 		SmartDashboard::PutNumber("GyroAngle",roboGyro->GetAngle());
 		SmartDashboard::PutNumber("GyroAngle",roboGyro->GetRate());
 		SmartDashboard::PutNumber("JoystickThrottle",opIn->GetThrottle());
+		SmartDashboard::PutNumber("Amperes from Vacuum",pdp->GetVoltage()*pdp->GetCurrent(11));
+		SmartDashboard::PutBoolean("Compressor Enabled?",compressor->Enabled());
 	}
 
 	/*
@@ -178,9 +180,11 @@ public:
 	 */
 	void AutonomousInit() {
 		roboGyro->Reset();
-		xAccelPID->Enable();
+		gyroPID->SetSetpoint(0.0);
+		gyroPID->Enable();
 		xAccelPID->SetSetpoint(0.0);
 		yAccelPID->SetSetpoint(0.0);
+		count = 0;
 		//compressor->Enabled();
 	}
 
@@ -190,16 +194,58 @@ public:
 	void AutonomousPeriodic() {
 		switch(currentAutoOperation){
 		case 0:
-
+			driveTrain->DriveForward(.75); //needs to be changed to distances
+			count++;
+			if((count/20)==3)
+			{
+				count =0;
+				currentAutoOperation++;
+			}
 			break;
 		case 1:
-
+			driveTrain->Stop();
+			count++;
+			if((count/20)==3)
+			{
+				count =0;
+				currentAutoOperation++;
+			}
 			break;
 		case 2:
-
+			driveTrain->DriveForward(.75); //needs to be changed to distances
+			count++;
+			if((count/20)==3)
+			{
+				count =0;
+				currentAutoOperation++;
+			}
 			break;
 		case 3:
-
+			driveTrain->Stop();
+			count++;
+			if((count/20)==3)
+			{
+				count =0;
+				currentAutoOperation++;
+			}
+			break;
+		case 4:
+			driveTrain->DriveRight(.75); //needs to be changed to distances
+			count++;
+			if((count/20)==3)
+			{
+				count =0;
+				currentAutoOperation++;
+			}
+			break;
+		case 5:
+			driveTrain->Stop();
+			count++;
+			if((count/20)==3)
+			{
+				count =0;
+				currentAutoOperation++;
+			}
 			break;
 		}
 	}
@@ -208,7 +254,7 @@ public:
 	 * preps for switch to disabled
 	 */
 	void DisabledInit() {
-		//compressor->SetClosedLoopControl(false);
+		compressor->SetClosedLoopControl(false);
 		xAccelPID->Reset();
 		xAccelPID->Disable();
 		yAccelPID->Reset();

@@ -36,19 +36,29 @@ void AccelPID::Reset() {
 }
 
 void AccelPID::UsePIDOutput(double output) {
-	driveTrain->SetAccelOffset(output);
+	switch (axis) {
+		case X:
+			driveTrain->SetXAccelOffset(output);
+			break;
+		case Y:
+			driveTrain->SetYAccelOffset(output);
+			break;
+		case Z:
+			driveTrain->SetZAccelOffset(output);
+			break;
+		}
 }
 
 double AccelPID::ReturnPIDInput() {
 	double input = 0;
 	switch (axis) {
-	case 1:
+	case X:
 		input = accel->GetX();
 		break;
-	case 2:
+	case Y:
 		input = accel->GetY();
 		break;
-	case 3:
+	case Z:
 		input = accel->GetZ();
 		break;
 	}

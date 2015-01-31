@@ -1,9 +1,9 @@
 #ifndef GyroPID_H
 #define GyroPID_H
 
+#include <MecanumDriveTrain.h>
 #include "Commands/PIDSubsystem.h"
 #include "WPILib.h"
-#include "MechanumDriveTrain.h"
 #include "CorrectedGyro.h"
 
 class GyroPID: public PIDSubsystem

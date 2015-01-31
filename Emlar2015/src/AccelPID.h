@@ -8,16 +8,20 @@
 #ifndef SRC_ACCELPID_H_
 #define SRC_ACCELPID_H_
 
+#include <MecanumDriveTrain.h>
 #include "WPILib.h"
 #include "Commands/PIDSubsystem.h"
-#include "MechanumDriveTrain.h"
-
 
 class AccelPID : public PIDSubsystem {
 private:
 	double p;
 	double i;
 	double d;
+
+	static const int X = 1;
+	static const int Y = 2;
+	static const int Z = 3;
+
 	int axis;
 
 	Accelerometer* accel;
