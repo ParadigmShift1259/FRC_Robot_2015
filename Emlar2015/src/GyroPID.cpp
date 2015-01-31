@@ -7,11 +7,16 @@ GyroPID::GyroPID(double p, double i, double d, CorrectedGyro* roboGyro, Mechanum
 {
 	this->driveTrain = driveTrain;
 	this->roboGyro = roboGyro;
+	SetAbsoluteTolerance(0.0);
 
 	// Use these to get going:
 	// SetSetpoint() -  Sets where the PID controller should move the system
 	//                  to
 	// Enable() - Enables the PID controller.
+}
+
+void GyroPID::SetPIDValues(double p,double i,double d) {
+	GetPIDController()->SetPID(p,i,d);
 }
 
 double GyroPID::ReturnPIDInput()
@@ -27,6 +32,10 @@ void GyroPID::UsePIDOutput(double output)
 	driveTrain->SetGyroOffset(output);
 	// Use output to drive your system, like a motor
 	// e.g. yourMotor->Set(output);
+}
+
+void GyroPID::Reset() {
+	GetPIDController()->Reset();
 }
 
 void GyroPID::SetSetpoint(double setpoint) {

@@ -15,17 +15,35 @@ class Robot: public IterativeRobot
 {
 
 private:
+	//Axis definitions
+	static const int X						= 1;
+	static const int Y						= 2;
+	static const int Z						= 3;
+
+	//PDP Channels
+	const uint32_t frontLeftPDPChannel		= 0;
+	const uint32_t frontRightPDPChannel		= 2;
+	const uint32_t backLeftPDPChannel		= 1;
+	const uint32_t backRightPDPChannel		= 3;
+
     // Channels for the motors
-	const uint32_t frontLeftChannel		= 2;
-	const uint32_t backLeftChannel 		= 1;
-	const uint32_t frontRightChannel 	= 0;
-	const uint32_t backRightChannel 	= 3;
-	const uint32_t vacuumMotor1Channel	= 4;
+	const uint32_t frontLeftChannel			= 2;
+	const uint32_t frontRightChannel 		= 0;
+	const uint32_t backLeftChannel 			= 1;
+	const uint32_t backRightChannel 		= 3;
+	const uint32_t vacuumMotor1Channel		= 4;
+
+	//Drive Encoders
+	const uint32_t frontLeftEncoderChannel	= 0;
+	const uint32_t frontRightEncoderChannel	= 1;
+	const uint32_t backLeftEncoderChannel	= 2;
+	const uint32_t backRightEncoderChannel	= 3;
+
 
 	//channels for analog sensors
-	const uint32_t gyroChannel			= 0;
-	const uint32_t gyroThermChannel		= 1;
-	const uint32_t vacuumSensor1Channel	= 2;
+	const uint32_t gyroChannel				= 0;
+	const uint32_t gyroThermChannel			= 1;
+	const uint32_t vacuumSensor1Channel		= 2;
 
 	//channels for digital sensors
 
@@ -34,22 +52,24 @@ private:
 	const uint32_t compressorChannel    = 0;
 
 	//booleans for Autonomous
-	bool driveStraightForward;
-	bool driveStraightSideways;
 	int currentAutoOperation = 0;
 	int count = 0;
 
 	//PID Coefficients
-	double gyroP = 0.6;
-	double gyroI = 0.00005;
-	double gyroD = 0.1;
+	double gyroStraightP = 0.5;
+	double gyroStraightI = 0.03;
+	double gyroStraightD = 0.1;
+
+	double gyroStraifP = 0.001;
+	double gyroStraifI = 0.000005;
+	double gyroStraifD = 2000.0;
 
 	double accelStraifP = 0.0;
-	double accelStraifI = 0.01;
+	double accelStraifI = -0.2;
 	double accelStraifD = 0.0;
 
 	double accelStraightP = 0.0;
-	double accelStraightI = 0.01;
+	double accelStraightI = -0.2;
 	double accelStraightD = 0.0;
 
 
@@ -61,11 +81,19 @@ private:
 	AnalogInput* vacuumSensor1;
 	Joystick* stick;			//currently the only joystick
 
-	//outputs
+	//Drive Motors
 	Talon* frontLeftWheel;
 	Talon* backLeftWheel;
 	Talon* frontRightWheel;
 	Talon* backRightWheel;
+
+	//Drive Encoders
+	Encoder* frontLeftEncoder;
+	Encoder* frontRightEncoder;
+	Encoder* backLeftEncoder;
+	Encoder* backRightEncoder;
+
+	//Other Outputs
 	Talon* vacuumMotor1;
 	Compressor* compressor;
 
@@ -73,10 +101,12 @@ private:
 	Vacuum* vacuum1;
 	OI* opIn;
 	MechanumDriveTrain* driveTrain;
+	CorrectedGyro* roboGyro;
+
+	//PID Loops
 	GyroPID* gyroPID;
 	AccelPID* xAccelPID;
 	AccelPID* yAccelPID;
-	CorrectedGyro* roboGyro;
 
 public:
 
@@ -90,12 +120,20 @@ public:
 		accelerometer = new BuiltInAccelerometer();
 		vacuumSensor1 = new AnalogInput(vacuumSensor1Channel);
 
-		//outputs
-		compressor = new Compressor(compressorChannel);
+		//Drive Motors
 		frontLeftWheel = new Talon(frontLeftChannel);
 		backLeftWheel = new Talon(backLeftChannel);
 		frontRightWheel = new Talon(frontRightChannel);
 		backRightWheel = new Talon(backRightChannel);
+
+		//Drive Encoder
+		frontLeftEncoder = new Encoder(frontLeftEncoderChannel);
+		frontRightEncoder = new Encoder(frontRightEncoderChannel);
+		backLeftEncoder = new Encoder(backLeftEncoderChannel);
+		backRightEncoder = new Encoder(backRightEncoderChannel);
+
+		//other outputs
+		compressor = new Compressor(compressorChannel);
 		vacuumMotor1 = new Talon(vacuumMotor1Channel);
 
 		//wpilib class setup
@@ -104,17 +142,19 @@ public:
 		//user generated classes
 		vacuum1 = new Vacuum(vacuumSensor1, vacuumMotor1);
 		opIn = new OI(stick);
-		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel,frontRightWheel,backRightWheel,opIn);
+		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel, frontRightWheel, backRightWheel, frontLeftEncoder, backLeftEncoder, frontRightEncoder, backRightEncoder, opIn);
 		roboGyro = new CorrectedGyro(gyro,therm);
-		gyroPID = new GyroPID(gyroP,gyroI,gyroD,roboGyro,driveTrain);
-		xAccelPID = new AccelPID(accelStraifP,accelStraifI,accelStraifD,accelerometer,driveTrain,1);
-		yAccelPID = new AccelPID(accelStraightP,accelStraightI,accelStraightD,accelerometer,driveTrain,2);
+
+		//PID Loops
+		gyroPID = new GyroPID(gyroStraightP,gyroStraightI,gyroStraightD,roboGyro,driveTrain);
+		xAccelPID = new AccelPID(accelStraifP,accelStraifI,accelStraifD,accelerometer,driveTrain,X);
+		yAccelPID = new AccelPID(accelStraightP,accelStraightI,accelStraightD,accelerometer,driveTrain,Y);
 
 		//user generated classes setup
 		double averageValue = (roboGyro->GetRaw() + roboGyro->GetRaw() + roboGyro->GetRaw()+ roboGyro->GetRaw()+ roboGyro->GetRaw())/5;
 		roboGyro->SetZeroValue(averageValue);
 		roboGyro->SetSensitivity(0.007);
-		roboGyro->SetDeadband(5);
+		roboGyro->SetDeadband(4);
 		roboGyro->Reset();
 	}
 
@@ -126,6 +166,18 @@ public:
 		delete accelerometer;
 		delete vacuumSensor1;
 
+		//Drive Motors
+		delete frontLeftWheel;
+		delete backLeftWheel;
+		delete frontRightWheel;
+		delete backRightWheel;
+
+		//Drive Encoders
+		delete frontLeftEncoder;
+		delete backLeftEncoder;
+		delete frontRightEncoder;
+		delete backRightEncoder;
+
 		//outputs
 		delete frontLeftWheel;
 		delete backLeftWheel;
@@ -134,15 +186,27 @@ public:
 		delete vacuumMotor1;
 		delete compressor;
 
-		//user generated classes
+		//PID Loops
 		delete gyroPID;
 		delete xAccelPID;
 		delete yAccelPID;
+
+		//user generated classes
 		delete roboGyro;
 		delete driveTrain;
 		delete opIn;
 		delete vacuum1;
 	}
+
+	void TestInit() {
+		roboGyro->Reset();
+
+	}
+
+	void TestPeriodic() {
+		SmartDashboard::PutNumber("GyroAngle",roboGyro->GetAngle());
+	}
+
 
 	/*
 	 * preps for the human operated mode
@@ -150,7 +214,6 @@ public:
 	void TeleopInit() {
 		printf("TeleopInit \n");
 		roboGyro->Reset(); //resets the Gyro
-		gyroPID->Enable(); //enables PID
 		gyroPID->SetSetpoint(0.0); //sets the setpoint to zero
 		compressor->SetClosedLoopControl(true);
 
@@ -161,17 +224,23 @@ public:
 	 */
 	void TeleopPeriodic() {
 		vacuum1->Start();
+		gyroPID->Enable(); //enables PID
 		printf("InTeleop\n");
 		driveTrain->Drive(); //tells the robot to drive
 
 		//put numbers to the smart dashboard for diagnostics
+		//PDP Values from the drive
+		SmartDashboard::PutNumber("FrontLeftMotorPower",pdp->GetCurrent(frontLeftPDPChannel)*pdp->GetVoltage());
+		SmartDashboard::PutNumber("FrontRightMotorPower",pdp->GetCurrent(frontRightPDPChannel)*pdp->GetVoltage());
+		SmartDashboard::PutNumber("BackLeftMotorPower",pdp->GetCurrent(backLeftPDPChannel)*pdp->GetVoltage());
+		SmartDashboard::PutNumber("BackRightMotorPower",pdp->GetCurrent(backRightPDPChannel)*pdp->GetVoltage());
+		//other information
 		SmartDashboard::PutNumber("JoystickY",opIn->GetX());
 		SmartDashboard::PutNumber("JoystickX",opIn->GetY());
 		SmartDashboard::PutNumber("JoystickTwist",opIn->GetTwist());
 		SmartDashboard::PutNumber("GyroAngle",roboGyro->GetAngle());
 		SmartDashboard::PutNumber("GyroAngle",roboGyro->GetRate());
 		SmartDashboard::PutNumber("JoystickThrottle",opIn->GetThrottle());
-		SmartDashboard::PutNumber("Amperes from Vacuum",pdp->GetVoltage()*pdp->GetCurrent(11));
 		SmartDashboard::PutBoolean("Compressor Enabled?",compressor->Enabled());
 	}
 
@@ -181,7 +250,7 @@ public:
 	void AutonomousInit() {
 		roboGyro->Reset();
 		gyroPID->SetSetpoint(0.0);
-		gyroPID->Enable();
+		gyroPID->Reset();
 		xAccelPID->SetSetpoint(0.0);
 		yAccelPID->SetSetpoint(0.0);
 		count = 0;
@@ -195,9 +264,11 @@ public:
 
 		SmartDashboard::PutNumber("GyroValue",gyro->GetValue());
 		SmartDashboard::PutNumber("GyroAngle",roboGyro->GetAngle());
+		gyroPID->Enable();
 		switch(currentAutoOperation){
 		case 0:
-			driveTrain->DriveForward(.3*(count)/40.0); //needs to be changed to distances
+			gyroPID->SetPIDValues(gyroStraightP,gyroStraightI,gyroStraightD);
+			driveTrain->DriveForward(.1*(count)/60.0); //needs to be changed to distances
 			count++;
 			if((count/20)==20)
 			{
@@ -215,7 +286,9 @@ public:
 			}
 			break;
 		case 2:
-			driveTrain->DriveForward(.3*(count)/40.0); //needs to be changed to distances
+			gyroPID->SetPIDValues(gyroStraightP,gyroStraightI,gyroStraightD);
+			gyroPID->Reset();
+			//driveTrain->DriveForward(.1*(count)/60.0); //needs to be changed to distances
 			count++;
 			if((count/20)==20)
 			{
@@ -258,10 +331,13 @@ public:
 	 */
 	void DisabledInit() {
 		compressor->SetClosedLoopControl(false);
-		xAccelPID->Reset();
+		gyroPID->Disable();
+		gyroPID->Reset();
 		xAccelPID->Disable();
-		yAccelPID->Reset();
+		xAccelPID->Reset();
 		yAccelPID->Disable();
+		yAccelPID->Reset();
+		driveTrain->Stop();
 		gyroPID->Disable(); //stops the gyro PID
 		vacuum1->Stop();
 		currentAutoOperation = 0;

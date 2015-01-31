@@ -15,8 +15,10 @@ public:
 	GyroPID(double p, double i, double d, CorrectedGyro* roboGyro, MechanumDriveTrain* driveTrain);
 	double ReturnPIDInput();
 	void UsePIDOutput(double output);
+	void SetPIDValues(double p,double i,double d);
 	void InitDefaultCommand();
 	void SetSetpoint(double setpoint);
+	void Reset();
 };
 
 #endif
