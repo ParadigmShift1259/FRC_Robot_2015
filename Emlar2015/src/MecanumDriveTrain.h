@@ -19,6 +19,11 @@ private:
 	SpeedController* rearLeftWheel;
 	SpeedController* frontRightWheel;
 	SpeedController* rearRightWheel;
+
+	Encoder* frontLeftEncoder;
+	Encoder* rearLeftEncoder;
+	Encoder* frontRightEncoder;
+	Encoder* rearRightEncoder;
 	OI* operatorInputs;
 	RobotDrive* robotDrive;	// robot drive system
 
