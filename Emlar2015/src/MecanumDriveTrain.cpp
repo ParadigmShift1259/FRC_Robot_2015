@@ -18,16 +18,16 @@
 				twist);
 	}
 
-	void MechanumDriveTrain::DriveForward(double speed) {
+	void MechanumDriveTrain::DriveForward(double distance) {
 		robotDrive->MecanumDrive_Cartesian(
-				speed,
-				xAccelPIDOffset,
+				distance,
+				straifPIDOffset,
 				gyroPIDOffset);
 	}
 
 	void MechanumDriveTrain::DriveRight(double speed) {
 		robotDrive->MecanumDrive_Cartesian(
-				yAccelPIDOffset,
+				straightPIDOffset,
 				speed,
 				gyroPIDOffset);
 	}
@@ -36,16 +36,12 @@
 		robotDrive->MecanumDrive_Cartesian(0,0,0);
 	}
 
-	void MechanumDriveTrain::SetXAccelOffset(double offset){
-		xAccelPIDOffset = offset;
+	void MechanumDriveTrain::SetStraifOffset(double offset){
+		straifPIDOffset = offset;
 	}
 
-	void MechanumDriveTrain::SetYAccelOffset(double offset){
-		yAccelPIDOffset = offset;
-	}
-
-	void MechanumDriveTrain::SetZAccelOffset(double offset){
-		zAccelPIDOffset = offset;
+	void MechanumDriveTrain::SetStraightOffset(double offset){
+		straightPIDOffset = offset;
 	}
 
 	void MechanumDriveTrain::SetGyroOffset(double offset) {

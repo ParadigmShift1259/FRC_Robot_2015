@@ -5,29 +5,29 @@
  *      Author: Programming
  */
 
-#ifndef SRC_ACCELPID_H_
-#define SRC_ACCELPID_H_
+#ifndef SRC_ENCODERDRIVEPID_H_
+#define SRC_ENCODERDRIVEPID_H_
 
 #include <MecanumDriveTrain.h>
 #include "WPILib.h"
 #include "Commands/PIDSubsystem.h"
+#include "DriveEncoders.h"
 
-class AccelPID : public PIDSubsystem {
+class EncoderDrivePID : public PIDSubsystem {
 private:
 	double p;
 	double i;
 	double d;
 
-	static const int X = 1;
-	static const int Y = 2;
-	static const int Z = 3;
+	static const int STRAIGHT = 1;
+	static const int STRAIF = 2;
 
 	int axis;
 
-	Accelerometer* accel;
+	DriveEncoders* driveEncoders;
 	MechanumDriveTrain* driveTrain;
 public:
-	AccelPID(double p, double i, double d, Accelerometer* accel, MechanumDriveTrain* driveTrain, int axis);
+	EncoderDrivePID(double p, double i, double d, DriveEncoders* driveEncoders, MechanumDriveTrain* driveTrain, int axis);
 	double ReturnPIDInput();
 	void UsePIDOutput(double output);
 	void InitDefaultCommand();
@@ -35,7 +35,7 @@ public:
 	void SetSetpoint(double setpoint);
 	void Reset();
 	void Disable();
-	virtual ~AccelPID();
+	virtual ~EncoderDrivePID();
 };
 
-#endif /* SRC_ACCELPID_H_ */
+#endif /* SRC_ENCODERDRIVEPID_H_ */

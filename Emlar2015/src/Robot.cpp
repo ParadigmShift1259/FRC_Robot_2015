@@ -1,3 +1,4 @@
+#include <EncoderDrivePID.h>
 #include <MecanumDriveTrain.h>
 #include "WPILib.h"
 #include "Joystick.h"
@@ -5,8 +6,9 @@
 #include <stdio.h>
 #include "GyroPID.h"
 #include "CorrectedGyro.h"
-#include "AccelPID.h"
 #include "Vacuum.h"
+#include "DriveEncoders.h"
+#include "EncoderDrivePID.h"
 
 /**
  * This is a demo program showing how to use Mechanum control with the RobotDrive class.
@@ -15,62 +17,65 @@ class Robot: public IterativeRobot
 {
 
 private:
-	//Axis definitions
-	static const int X						= 1;
-	static const int Y						= 2;
-	static const int Z						= 3;
+	//Strafe and Straight Definitions
+	static const int STRAIGHT = 1;
+	static const int STRAFE = 2;
 
 	//PDP Channels
-	const uint32_t frontLeftPDPChannel		= 0;
-	const uint32_t frontRightPDPChannel		= 2;
-	const uint32_t backLeftPDPChannel		= 1;
-	const uint32_t backRightPDPChannel		= 3;
+	const uint32_t frontLeftPDPChannel			= 0;
+	const uint32_t frontRightPDPChannel			= 2;
+	const uint32_t backLeftPDPChannel			= 1;
+	const uint32_t backRightPDPChannel			= 3;
 
     // Channels for the motors
-	const uint32_t frontLeftChannel			= 2;
-	const uint32_t frontRightChannel 		= 0;
-	const uint32_t backLeftChannel 			= 1;
-	const uint32_t backRightChannel 		= 3;
-	const uint32_t vacuumMotor1Channel		= 4;
+	const uint32_t frontLeftChannel				= 2;
+	const uint32_t frontRightChannel 			= 0;
+	const uint32_t backLeftChannel 				= 1;
+	const uint32_t backRightChannel 			= 3;
+	const uint32_t vacuumMotor1Channel			= 4;
 
 	//Drive Encoders
-	const uint32_t frontLeftEncoderChannel	= 0;
-	const uint32_t frontRightEncoderChannel	= 1;
-	const uint32_t backLeftEncoderChannel	= 2;
-	const uint32_t backRightEncoderChannel	= 3;
+	const uint32_t frontLeftEncoderChannelA		= 0;
+	const uint32_t frontLeftEncoderChannelB		= 1;
+	const uint32_t frontRightEncoderChannelA	= 2;
+	const uint32_t frontRightEncoderChannelB	= 3;
+	const uint32_t backLeftEncoderChannelA		= 4;
+	const uint32_t backLeftEncoderChannelB		= 5;
+	const uint32_t backRightEncoderChannelA		= 6;
+	const uint32_t backRightEncoderChannelB		= 7;
 
 
 	//channels for analog sensors
-	const uint32_t gyroChannel				= 0;
-	const uint32_t gyroThermChannel			= 1;
-	const uint32_t vacuumSensor1Channel		= 2;
+	const uint32_t gyroChannel					= 0;
+	const uint32_t gyroThermChannel				= 1;
+	const uint32_t vacuumSensor1Channel			= 2;
 
 	//channels for digital sensors
 
 	//channels for other things
-	const uint32_t joystickChannel		= 0;
-	const uint32_t compressorChannel    = 0;
+	const uint32_t joystickChannel				= 0;
+	const uint32_t compressorChannel	    	= 0;
 
 	//booleans for Autonomous
 	int currentAutoOperation = 0;
 	int count = 0;
 
 	//PID Coefficients
-	double gyroStraightP = 0.5;
-	double gyroStraightI = 0.03;
-	double gyroStraightD = 0.1;
+	double gyroStraightP						= 0.5;
+	double gyroStraightI						= 0.03;
+	double gyroStraightD						= 0.1;
 
-	double gyroStraifP = 0.001;
-	double gyroStraifI = 0.000005;
-	double gyroStraifD = 2000.0;
+	double gyroStrafeP							= 0.001;
+	double gyroStrafeI							= 0.000005;
+	double gyroStrafeD							= 2000.0;
 
-	double accelStraifP = 0.0;
-	double accelStraifI = -0.2;
-	double accelStraifD = 0.0;
+	double strafeP								= 0.0;
+	double strafeI								= 0.2;
+	double strafeD								= 0.0;
 
-	double accelStraightP = 0.0;
-	double accelStraightI = -0.2;
-	double accelStraightD = 0.0;
+	double straightP							= 0.0;
+	double straightI							= 0.2;
+	double straightD							= 0.0;
 
 
 	//inputs
@@ -102,11 +107,12 @@ private:
 	OI* opIn;
 	MechanumDriveTrain* driveTrain;
 	CorrectedGyro* roboGyro;
+	DriveEncoders* driveEncoders;
 
 	//PID Loops
 	GyroPID* gyroPID;
-	AccelPID* xAccelPID;
-	AccelPID* yAccelPID;
+	EncoderDrivePID* straightDrivePID;
+	EncoderDrivePID* strafeDrivePID;
 
 public:
 
@@ -127,10 +133,10 @@ public:
 		backRightWheel = new Talon(backRightChannel);
 
 		//Drive Encoder
-		frontLeftEncoder = new Encoder(frontLeftEncoderChannel);
-		frontRightEncoder = new Encoder(frontRightEncoderChannel);
-		backLeftEncoder = new Encoder(backLeftEncoderChannel);
-		backRightEncoder = new Encoder(backRightEncoderChannel);
+		frontLeftEncoder = new Encoder(frontLeftEncoderChannelA,frontLeftEncoderChannelB);
+		frontRightEncoder = new Encoder(frontRightEncoderChannelA,frontRightEncoderChannelB);
+		backLeftEncoder = new Encoder(backLeftEncoderChannelA,backLeftEncoderChannelB);
+		backRightEncoder = new Encoder(backRightEncoderChannelA,backRightEncoderChannelA);
 
 		//other outputs
 		compressor = new Compressor(compressorChannel);
@@ -142,13 +148,14 @@ public:
 		//user generated classes
 		vacuum1 = new Vacuum(vacuumSensor1, vacuumMotor1);
 		opIn = new OI(stick);
-		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel, frontRightWheel, backRightWheel, frontLeftEncoder, backLeftEncoder, frontRightEncoder, backRightEncoder, opIn);
+		driveEncoders = new DriveEncoders(frontLeftEncoder, backLeftEncoder, frontRightEncoder, backRightEncoder);
+		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel, frontRightWheel, backRightWheel, opIn,driveEncoders);
 		roboGyro = new CorrectedGyro(gyro,therm);
 
 		//PID Loops
 		gyroPID = new GyroPID(gyroStraightP,gyroStraightI,gyroStraightD,roboGyro,driveTrain);
-		xAccelPID = new AccelPID(accelStraifP,accelStraifI,accelStraifD,accelerometer,driveTrain,X);
-		yAccelPID = new AccelPID(accelStraightP,accelStraightI,accelStraightD,accelerometer,driveTrain,Y);
+		straightDrivePID = new EncoderDrivePID(strafeP,strafeI,strafeD,driveEncoders,driveTrain,STRAIGHT);
+		strafeDrivePID = new EncoderDrivePID(straightP,straightI,straightD,driveEncoders,driveTrain,STRAFE);
 
 		//user generated classes setup
 		double averageValue = (roboGyro->GetRaw() + roboGyro->GetRaw() + roboGyro->GetRaw()+ roboGyro->GetRaw()+ roboGyro->GetRaw())/5;
@@ -188,8 +195,8 @@ public:
 
 		//PID Loops
 		delete gyroPID;
-		delete xAccelPID;
-		delete yAccelPID;
+		delete straightDrivePID;
+		delete strafeDrivePID;
 
 		//user generated classes
 		delete roboGyro;
@@ -251,8 +258,8 @@ public:
 		roboGyro->Reset();
 		gyroPID->SetSetpoint(0.0);
 		gyroPID->Reset();
-		xAccelPID->SetSetpoint(0.0);
-		yAccelPID->SetSetpoint(0.0);
+		strafeDrivePID->SetSetpoint(0.0);
+		straightDrivePID->SetSetpoint(0.0);
 		count = 0;
 		//compressor->Enabled();
 	}
@@ -333,10 +340,10 @@ public:
 		compressor->SetClosedLoopControl(false);
 		gyroPID->Disable();
 		gyroPID->Reset();
-		xAccelPID->Disable();
-		xAccelPID->Reset();
-		yAccelPID->Disable();
-		yAccelPID->Reset();
+		straightDrivePID->Disable();
+		straightDrivePID->Reset();
+		strafeDrivePID->Disable();
+		strafeDrivePID->Reset();
 		driveTrain->Stop();
 		gyroPID->Disable(); //stops the gyro PID
 		vacuum1->Stop();
