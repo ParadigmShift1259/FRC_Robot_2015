@@ -21,6 +21,10 @@ private:
 	static const int STRAIGHT = 1;
 	static const int STRAFE = 2;
 
+	//Constants for Robot Properties
+	//static const double distancePerTick = ;
+	//static const double rectOffset = ;
+
 	//PDP Channels
 	const uint32_t frontLeftPDPChannel			= 0;
 	const uint32_t frontRightPDPChannel			= 2;
@@ -69,12 +73,12 @@ private:
 	double gyroStrafeI							= 0.000005;
 	double gyroStrafeD							= 2000.0;
 
-	double strafeP								= 0.0;
-	double strafeI								= 0.2;
+	double strafeP								= 0.1;
+	double strafeI								= 0.0;
 	double strafeD								= 0.0;
 
-	double straightP							= 0.0;
-	double straightI							= 0.2;
+	double straightP							= 0.1;
+	double straightI							= 0.0;
 	double straightD							= 0.0;
 
 
@@ -349,7 +353,6 @@ public:
 		vacuum1->Stop();
 		currentAutoOperation = 0;
 	}
-
 };
 
 START_ROBOT_CLASS(Robot);
