@@ -9,6 +9,7 @@
 #include "Vacuum.h"
 #include "DriveEncoders.h"
 #include "EncoderDrivePID.h"
+#include "Lifter.h"
 
 /**
  * This is a demo program showing how to use Mechanum control with the RobotDrive class.
@@ -21,9 +22,18 @@ private:
 	static const int STRAIGHT = 1;
 	static const int STRAFE = 2;
 
+	//Lifter Position Definitions
+	static const int FLOOR						= 1;
+	static const int TOTE						= 2;
+	static const int COOPSTEP					= 3;
+	static const int COOPSTEP1TOTE				= 4;
+	static const int COOPSTEP2TOTE				= 5;
+	static const int COOPSTEP3TOTE				= 6;
+	static const int SCORINGPLATFORM			= 7;
+
 	//Constants for Robot Properties
-	//static const double distancePerTick = ;
-	//static const double rectOffset = ;
+	//static const double distancePerTick		= ;
+	//static const double rectOffset			= ;
 
 	//PDP Channels
 	const uint32_t frontLeftPDPChannel			= 0;
@@ -31,7 +41,7 @@ private:
 	const uint32_t backLeftPDPChannel			= 1;
 	const uint32_t backRightPDPChannel			= 3;
 
-    // Channels for the motors
+    //PWM Channels for the motors
 	const uint32_t frontLeftChannel				= 2;
 	const uint32_t frontRightChannel 			= 0;
 	const uint32_t backLeftChannel 				= 1;
@@ -54,11 +64,13 @@ private:
 	const uint32_t gyroThermChannel				= 1;
 	const uint32_t vacuumSensor1Channel			= 2;
 
-	//channels for digital sensors
+	//CAN Channels
+	const uint32_t compressorChannel	    	= 0;
+	const uint32_t lifterCanChannel				= 1;
 
 	//channels for other things
 	const uint32_t joystickChannel				= 0;
-	const uint32_t compressorChannel	    	= 0;
+
 
 	//booleans for Autonomous
 	int currentAutoOperation = 0;
@@ -81,6 +93,10 @@ private:
 	double straightI							= 0.0;
 	double straightD							= 0.0;
 
+	double lifterP								= 0.1;
+	double lifterI								= 0.0;
+	double lifterD								= 0.0;
+
 
 	//inputs
 	PowerDistributionPanel* pdp;
@@ -89,6 +105,9 @@ private:
 	AnalogInput* gyro;
 	AnalogInput* vacuumSensor1;
 	Joystick* stick;			//currently the only joystick
+
+	//Lifter Motor
+	CANTalon* lifterMotor;
 
 	//Drive Motors
 	Talon* frontLeftWheel;
@@ -112,6 +131,7 @@ private:
 	MechanumDriveTrain* driveTrain;
 	CorrectedGyro* roboGyro;
 	DriveEncoders* driveEncoders;
+	Lifter* lifter;
 
 	//PID Loops
 	GyroPID* gyroPID;
@@ -137,35 +157,39 @@ public:
 		backRightWheel = new Talon(backRightChannel);
 
 		//Drive Encoder
-		frontLeftEncoder = new Encoder(frontLeftEncoderChannelA,frontLeftEncoderChannelB);
-		frontRightEncoder = new Encoder(frontRightEncoderChannelA,frontRightEncoderChannelB);
-		backLeftEncoder = new Encoder(backLeftEncoderChannelA,backLeftEncoderChannelB);
-		backRightEncoder = new Encoder(backRightEncoderChannelA,backRightEncoderChannelA);
+		frontLeftEncoder 	= new Encoder(frontLeftEncoderChannelA,frontLeftEncoderChannelB);
+		frontRightEncoder 	= new Encoder(frontRightEncoderChannelA,frontRightEncoderChannelB);
+		backLeftEncoder 	= new Encoder(backLeftEncoderChannelA,backLeftEncoderChannelB);
+		backRightEncoder 	= new Encoder(backRightEncoderChannelA,backRightEncoderChannelA);
+
+		//Lifter Motor
+		lifterMotor 		= new CANTalon(lifterCanChannel);
 
 		//other outputs
-		compressor = new Compressor(compressorChannel);
-		vacuumMotor1 = new Talon(vacuumMotor1Channel);
+		compressor			= new Compressor(compressorChannel);
+		vacuumMotor1		= new Talon(vacuumMotor1Channel);
 
 		//wpilib class setup
 		compressor->SetClosedLoopControl(true);
 
 		//user generated classes
-		vacuum1 = new Vacuum(vacuumSensor1, vacuumMotor1);
-		opIn = new OI(stick);
-		driveEncoders = new DriveEncoders(frontLeftEncoder, backLeftEncoder, frontRightEncoder, backRightEncoder);
-		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel, frontRightWheel, backRightWheel, opIn,driveEncoders);
-		roboGyro = new CorrectedGyro(gyro,therm);
+		vacuum1				= new Vacuum(vacuumSensor1, vacuumMotor1);
+		opIn				= new OI(stick);
+		driveEncoders		= new DriveEncoders(frontLeftEncoder, backLeftEncoder, frontRightEncoder, backRightEncoder);
+		driveTrain			= new MechanumDriveTrain(frontLeftWheel, backLeftWheel, frontRightWheel, backRightWheel, opIn,driveEncoders);
+		roboGyro			= new CorrectedGyro(gyro,therm);
+		lifter				= new Lifter(lifterP,lifterI,lifterD,lifterMotor);
 
 		//PID Loops
-		gyroPID = new GyroPID(gyroStraightP,gyroStraightI,gyroStraightD,roboGyro,driveTrain);
-		straightDrivePID = new EncoderDrivePID(strafeP,strafeI,strafeD,driveEncoders,driveTrain,STRAIGHT);
-		strafeDrivePID = new EncoderDrivePID(straightP,straightI,straightD,driveEncoders,driveTrain,STRAFE);
+		gyroPID				= new GyroPID(gyroStraightP,gyroStraightI,gyroStraightD,roboGyro,driveTrain);
+		straightDrivePID	= new EncoderDrivePID(strafeP,strafeI,strafeD,driveEncoders,driveTrain,STRAIGHT);
+		strafeDrivePID		= new EncoderDrivePID(straightP,straightI,straightD,driveEncoders,driveTrain,STRAFE);
 
 		//user generated classes setup
-		double averageValue = (roboGyro->GetRaw() + roboGyro->GetRaw() + roboGyro->GetRaw()+ roboGyro->GetRaw()+ roboGyro->GetRaw())/5;
+		double averageValue	= (roboGyro->GetRaw() + roboGyro->GetRaw() + roboGyro->GetRaw()+ roboGyro->GetRaw()+ roboGyro->GetRaw())/5;
 		roboGyro->SetZeroValue(averageValue);
 		roboGyro->SetSensitivity(0.007);
-		roboGyro->SetDeadband(4);
+		roboGyro->SetDeadband(5);
 		roboGyro->Reset();
 	}
 
@@ -189,11 +213,10 @@ public:
 		delete frontRightEncoder;
 		delete backRightEncoder;
 
+		//Lifter Motor
+		delete lifterMotor;
+
 		//outputs
-		delete frontLeftWheel;
-		delete backLeftWheel;
-		delete frontRightWheel;
-		delete backRightWheel;
 		delete vacuumMotor1;
 		delete compressor;
 
@@ -207,6 +230,7 @@ public:
 		delete driveTrain;
 		delete opIn;
 		delete vacuum1;
+		delete lifter;
 	}
 
 	void TestInit() {
