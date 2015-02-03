@@ -9,12 +9,12 @@
 
 Lifter::Lifter(double p, double i, double d, CANTalon* lifterMotor) {
 	this->lifterMotor = lifterMotor;
-	lifterMotor->SetPID(p,i,d);
+	lifterMotor->SetPID(p, i, d);
 }
 
 bool Lifter::InPos() {
-	double error = levels[currentSetpoint]-lifterMotor->GetPosition();
-	return (error<threshold && error>-threshold);
+	double error = levels[currentSetpoint] - lifterMotor->GetPosition();
+	return (error < threshold && error > -threshold);
 }
 
 void Lifter::MoveTo(int step) {

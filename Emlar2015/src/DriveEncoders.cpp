@@ -23,7 +23,7 @@ double DriveEncoders::GetDistanceStraight() {
 	return forwardDistance;
 }
 
-double DriveEncoders::GetDistanceStraif() {
+double DriveEncoders::GetDistanceStrafe() {
 	double sidewaysDistance = (frontLeftEncoder->GetDistance()
 			+ rearLeftEncoder->GetDistance() - frontRightEncoder->GetDistance()
 			- rearRightEncoder->GetDistance()) / 4;

@@ -20,7 +20,7 @@ public:
 	DriveEncoders(Encoder* frontLeftEncoder, Encoder* rearLeftEncoder,
 			Encoder* frontRightEncoder, Encoder* rearRightEncoder);
 	double GetDistanceStraight();
-	double GetDistanceStraif();
+	double GetDistanceStrafe();
 	double GetRotation();
 	void ResetEncoders();
 	virtual ~DriveEncoders();

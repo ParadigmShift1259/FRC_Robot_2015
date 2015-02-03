@@ -53,7 +53,7 @@ double EncoderDrivePID::ReturnPIDInput() {
 		input = driveEncoders->GetDistanceStraight();
 		break;
 	case STRAIF:
-		input = driveEncoders->GetDistanceStraif();
+		input = driveEncoders->GetDistanceStrafe();
 		break;
 	}
 	return input;

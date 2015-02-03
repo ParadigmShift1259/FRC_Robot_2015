@@ -15,7 +15,7 @@ OI::OI(Joystick* mainJoystick) {
 
 }
 double OI::GetX() {
-	double currentX = (mainJoystick->GetX()/OI::GetThrottle());
+	double currentX = (mainJoystick->GetX() / OI::GetThrottle());
 	//adds deadzone and ramping
 	if (currentX > deadzone || currentX < -deadzone) {
 		if (std::abs(currentX - x) < shiftPerCycle) {
@@ -38,7 +38,7 @@ double OI::GetX() {
 	return x;
 }
 double OI::GetY() {
-	double currentY = (mainJoystick->GetY()/OI::GetThrottle());
+	double currentY = (mainJoystick->GetY() / OI::GetThrottle());
 	//adds deadzone and ramping
 	if (currentY > deadzone || currentY < -deadzone) {
 		if (std::abs(currentY - y) < shiftPerCycle) {
@@ -62,7 +62,7 @@ double OI::GetY() {
 }
 
 double OI::GetTwist() {
-	double currentTwist = (mainJoystick->GetTwist()/OI::GetThrottle());
+	double currentTwist = (mainJoystick->GetTwist() / OI::GetThrottle());
 	//adds deadzone
 	if (currentTwist > twistDeadzone || currentTwist < -twistDeadzone) {
 		twist = currentTwist;
@@ -81,7 +81,7 @@ bool OI::GetTrigger() {
 }
 
 double OI::GetThrottle() {
-	return mainJoystick->GetThrottle()+2.1;
+	return mainJoystick->GetThrottle() + 2.1;
 }
 
 Joystick* OI::GetJoystick() const {

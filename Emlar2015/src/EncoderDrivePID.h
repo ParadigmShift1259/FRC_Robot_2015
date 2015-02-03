@@ -13,7 +13,7 @@
 #include "Commands/PIDSubsystem.h"
 #include "DriveEncoders.h"
 
-class EncoderDrivePID : public PIDSubsystem {
+class EncoderDrivePID: public PIDSubsystem {
 private:
 	double p;
 	double i;
@@ -27,7 +27,8 @@ private:
 	DriveEncoders* driveEncoders;
 	MechanumDriveTrain* driveTrain;
 public:
-	EncoderDrivePID(double p, double i, double d, DriveEncoders* driveEncoders, MechanumDriveTrain* driveTrain, int axis);
+	EncoderDrivePID(double p, double i, double d, DriveEncoders* driveEncoders,
+			MechanumDriveTrain* driveTrain, int axis);
 	double ReturnPIDInput();
 	void UsePIDOutput(double output);
 	void InitDefaultCommand();
