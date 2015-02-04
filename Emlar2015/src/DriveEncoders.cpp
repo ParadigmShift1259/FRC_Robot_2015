@@ -7,6 +7,9 @@
 
 #include <DriveEncoders.h>
 
+/**
+ * constructor that takes in 4 encoders for the mecanum drive train
+ */
 DriveEncoders::DriveEncoders(Encoder* frontLeftEncoder,
 		Encoder* rearLeftEncoder, Encoder* frontRightEncoder,
 		Encoder* rearRightEncoder) {
@@ -16,12 +19,19 @@ DriveEncoders::DriveEncoders(Encoder* frontLeftEncoder,
 	this->rearRightEncoder = rearRightEncoder;
 }
 
+/**
+ * gets the distance traveled forward from the encoders in inches
+ */
 double DriveEncoders::GetDistanceStraight() {
 	double forwardDistance = (frontLeftEncoder->GetDistance()
 			+ rearLeftEncoder->GetDistance() + frontRightEncoder->GetDistance()
 			+ rearRightEncoder->GetDistance()) / 4;
 	return forwardDistance;
 }
+
+/**
+ * gets the distance traveled right from the encoders in inches
+ */
 
 double DriveEncoders::GetDistanceStrafe() {
 	double sidewaysDistance = (frontLeftEncoder->GetDistance()
@@ -37,6 +47,9 @@ double DriveEncoders::GetRotation() {
 	return rotation;
 }
 
+/**
+ * resets the encoders to zero
+ */
 void DriveEncoders::ResetEncoders() {
 	frontLeftEncoder->Reset();
 	frontRightEncoder->Reset();

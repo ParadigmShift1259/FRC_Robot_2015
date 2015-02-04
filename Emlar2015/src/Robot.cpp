@@ -17,8 +17,7 @@
 class Robot: public IterativeRobot {
 
 private:
-	const double pi =
-			3.141592653589793238462643383279502884197169399375105820974944592307816406286;
+	const double pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286;
 
 	//drive encoder information
 	const double drivecpr = 360.0;
@@ -26,7 +25,7 @@ private:
 	//final information const double gearRatio = 15.0/40.0;
 	const double wheelDiameter = 6.0;
 	const double rotationsPerInch = pi * wheelDiameter * gearRatio;
-	const double inchesPerClickDrive = drivecpr / rotationsPerInch;
+	const double inchesPerClickDrive = rotationsPerInch /  drivecpr;
 
 	//lifter encoder information
 	const double liftercpr = 120.0;
@@ -62,14 +61,14 @@ private:
 	const uint32_t vacuumMotor1Channel = 4;
 
 	//Drive Encoders
-	const uint32_t frontLeftEncoderChannelA = 0;
-	const uint32_t frontLeftEncoderChannelB = 1;
-	const uint32_t frontRightEncoderChannelA = 2;
-	const uint32_t frontRightEncoderChannelB = 3;
-	const uint32_t backLeftEncoderChannelA = 4;
-	const uint32_t backLeftEncoderChannelB = 5;
-	const uint32_t backRightEncoderChannelA = 6;
-	const uint32_t backRightEncoderChannelB = 7;
+	const uint32_t frontLeftEncoderChannelA = 2;
+	const uint32_t frontLeftEncoderChannelB = 3;
+	const uint32_t frontRightEncoderChannelA = 0;
+	const uint32_t frontRightEncoderChannelB = 1;
+	const uint32_t backLeftEncoderChannelA = 6;
+	const uint32_t backLeftEncoderChannelB = 7;
+	const uint32_t backRightEncoderChannelA = 4;
+	const uint32_t backRightEncoderChannelB = 5;
 
 	//channels for analog sensors
 	const uint32_t gyroChannel = 0;
@@ -124,7 +123,7 @@ private:
 	Joystick* stick;			//currently the only joystick
 
 	//Lifter Motor
-	CANTalon* lifterMotor;
+	//CANTalon* lifterMotor;
 
 	//Drive Motors
 	Talon* frontLeftWheel;
@@ -139,11 +138,11 @@ private:
 	Encoder* backRightEncoder;
 
 	//Pistons
-	Solenoid* toteGrabberL;
-	Solenoid* toteGrabberR;
-	Solenoid* toteDeployerL;
-	Solenoid* toteDeployerR;
-	Solenoid* vacuumDeployer;
+	//Solenoid* toteGrabberL;
+	//Solenoid* toteGrabberR;
+	//Solenoid* toteDeployerL;
+	//Solenoid* toteDeployerR;
+	//Solenoid* vacuumDeployer;
 
 	//Other Outputs
 	Talon* vacuumMotor1;
@@ -190,7 +189,7 @@ public:
 				backRightEncoderChannelA);
 
 		//Lifter Motor
-		lifterMotor = new CANTalon(lifterCanChannel);
+		//lifterMotor = new CANTalon(lifterCanChannel);
 
 		//other outputs
 		compressor = new Compressor(pcmChannel);
@@ -211,7 +210,7 @@ public:
 		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel,
 				frontRightWheel, backRightWheel, opIn, driveEncoders);
 		roboGyro = new CorrectedGyro(gyro, therm);
-		lifter = new Lifter(lifterP, lifterI, lifterD, lifterMotor);
+		//lifter = new Lifter(lifterP, lifterI, lifterD, lifterMotor);
 
 		//PID Loops
 		gyroPID = new GyroPID(gyroStraightP, gyroStraightI, gyroStraightD,
@@ -222,12 +221,10 @@ public:
 				driveEncoders, driveTrain, STRAFE);
 
 		//user generated classes setup
-		double averageValue = (roboGyro->GetRaw() + roboGyro->GetRaw()
-				+ roboGyro->GetRaw() + roboGyro->GetRaw() + roboGyro->GetRaw())
+		double averageValue = (gyro->GetValue() + gyro->GetValue()
+				+ gyro->GetValue() + gyro->GetValue() + gyro->GetValue())
 				/ 5;
 		roboGyro->SetZeroValue(averageValue);
-		roboGyro->SetSensitivity(0.007);
-		roboGyro->SetDeadband(5);
 		roboGyro->Reset();
 	}
 
@@ -252,7 +249,7 @@ public:
 		delete backRightEncoder;
 
 		//Lifter Motor
-		delete lifterMotor;
+		//delete lifterMotor;
 
 		//outputs
 		delete vacuumMotor1;
