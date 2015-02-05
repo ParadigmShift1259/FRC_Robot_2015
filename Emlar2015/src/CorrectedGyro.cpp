@@ -11,25 +11,34 @@
  * constructs the gyro using the analog channels for the gyro and teperature
  */
 CorrectedGyro::CorrectedGyro(AnalogInput* gyro, AnalogInput* temp) {
-	deadband = 4096.0*.014/5;
-	zero = 4096.0/2.0;
+	this->gyro = gyro;
+	this->temp = temp;
 	sensitivity = 0.007;
-	this->sensitivity = sensitivity;
-	gyro->SetOversampleBits(3);
-	gyro->SetAverageBits(2);
+	gyro->SetOversampleBits(0);
+	gyro->SetAverageBits(8);
 	gyro->SetSampleRate(65000);
-	sampleRate = gyro->GetSampleRate();
-	gyro->SetAccumulatorCenter(zero);
+	sampleRate = 65000;
 	gyro->SetAccumulatorDeadband(deadband);
 	gyro->SetAccumulatorInitialValue(0);
+	sampleRate = gyro->GetSampleRate();
+	double averageValue = (gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()) / 20.0;
+	gyro->SetAccumulatorCenter(averageValue);
 	gyro->InitAccumulator();
-	Reset();
-	maxNum = 1<<9;
+	maxNum = 1 << 4;
 }
 
 double CorrectedGyro::GetTemp() {
 	double temperature = temp->GetVoltage();
-	temperature = ((temperature-2.5)*9)+25;
+	temperature = ((temperature - 2.5) * 9.0) + 25.0;
 	return temperature;
 }
 
@@ -38,8 +47,16 @@ double CorrectedGyro::GetTemp() {
  */
 void CorrectedGyro::Reset() {
 	sampleRate = gyro->GetSampleRate();
-	double averageValue = (gyro->GetValue() + gyro->GetValue() + gyro->GetValue()
-			+ gyro->GetValue() + gyro->GetValue())/5;
+	double averageValue = (gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()
+			+ gyro->GetValue() + gyro->GetValue()) / 20.0;
 	gyro->SetAccumulatorCenter(averageValue);
 	gyro->ResetAccumulator();
 }
@@ -81,7 +98,8 @@ double CorrectedGyro::GetVoltage() {
  * converts raw accumulator output to an angle for easy readability
  */
 double CorrectedGyro::GetAngle() {
-	return gyro->GetAccumulatorValue()*5.0/(sensitivity*sampleRate*maxNum);
+	return gyro->GetAccumulatorValue() * 5.0
+			/ (sensitivity * sampleRate * maxNum);
 }
 
 /**
@@ -95,7 +113,7 @@ double CorrectedGyro::GetRaw() {
  * returns the rate the robot is turning in degrees per second
  */
 double CorrectedGyro::GetRate() {
-	return gyro->GetVoltage()/sensitivity;
+	return gyro->GetVoltage() / sensitivity;
 }
 
 CorrectedGyro::~CorrectedGyro() {

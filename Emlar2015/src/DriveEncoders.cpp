@@ -24,8 +24,8 @@ DriveEncoders::DriveEncoders(Encoder* frontLeftEncoder,
  */
 double DriveEncoders::GetDistanceStraight() {
 	double forwardDistance = (frontLeftEncoder->GetDistance()
-			+ rearLeftEncoder->GetDistance() + frontRightEncoder->GetDistance()
-			+ rearRightEncoder->GetDistance()) / 4;
+					+ rearLeftEncoder->GetDistance() - frontRightEncoder->GetDistance()
+					- rearRightEncoder->GetDistance()) / 4;
 	return forwardDistance;
 }
 
@@ -35,8 +35,8 @@ double DriveEncoders::GetDistanceStraight() {
 
 double DriveEncoders::GetDistanceStrafe() {
 	double sidewaysDistance = (frontLeftEncoder->GetDistance()
-			+ rearLeftEncoder->GetDistance() - frontRightEncoder->GetDistance()
-			- rearRightEncoder->GetDistance()) / 4;
+			+ rearLeftEncoder->GetDistance() + frontRightEncoder->GetDistance()
+			+ rearRightEncoder->GetDistance()) / 4;
 	return sidewaysDistance;
 }
 

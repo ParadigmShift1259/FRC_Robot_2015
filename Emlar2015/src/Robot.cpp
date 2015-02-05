@@ -123,7 +123,7 @@ private:
 	Joystick* stick;			//currently the only joystick
 
 	//Lifter Motor
-	//CANTalon* lifterMotor;
+	CANTalon* lifterMotor;
 
 	//Drive Motors
 	Talon* frontLeftWheel;
@@ -138,11 +138,11 @@ private:
 	Encoder* backRightEncoder;
 
 	//Pistons
-	//Solenoid* toteGrabberL;
-	//Solenoid* toteGrabberR;
-	//Solenoid* toteDeployerL;
-	//Solenoid* toteDeployerR;
-	//Solenoid* vacuumDeployer;
+	Solenoid* toteGrabberL;
+	Solenoid* toteGrabberR;
+	Solenoid* toteDeployerL;
+	Solenoid* toteDeployerR;
+	Solenoid* vacuumDeployer;
 
 	//Other Outputs
 	Talon* vacuumMotor1;
@@ -152,9 +152,9 @@ private:
 	Vacuum* vacuum1;
 	OI* opIn;
 	MechanumDriveTrain* driveTrain;
-	CorrectedGyro* roboGyro;
 	DriveEncoders* driveEncoders;
-	Lifter* lifter;
+	CorrectedGyro* roboGyro;
+	//Lifter* lifter;
 
 	//PID Loops
 	GyroPID* gyroPID;
@@ -189,7 +189,7 @@ public:
 				backRightEncoderChannelA);
 
 		//Lifter Motor
-		//lifterMotor = new CANTalon(lifterCanChannel);
+		lifterMotor = new CANTalon(lifterCanChannel);
 
 		//other outputs
 		compressor = new Compressor(pcmChannel);
@@ -208,10 +208,12 @@ public:
 		driveEncoders = new DriveEncoders(frontLeftEncoder, backLeftEncoder,
 				frontRightEncoder, backRightEncoder);
 		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel,
-				frontRightWheel, backRightWheel, opIn, driveEncoders);
+				frontRightWheel, backRightWheel, opIn);
 		roboGyro = new CorrectedGyro(gyro, therm);
 		//lifter = new Lifter(lifterP, lifterI, lifterD, lifterMotor);
 
+		//user generated classes setup
+		roboGyro->Reset();
 		//PID Loops
 		gyroPID = new GyroPID(gyroStraightP, gyroStraightI, gyroStraightD,
 				roboGyro, driveTrain);
@@ -219,13 +221,6 @@ public:
 				driveEncoders, driveTrain, STRAIGHT);
 		strafeDrivePID = new EncoderDrivePID(straightP, straightI, straightD,
 				driveEncoders, driveTrain, STRAFE);
-
-		//user generated classes setup
-		double averageValue = (gyro->GetValue() + gyro->GetValue()
-				+ gyro->GetValue() + gyro->GetValue() + gyro->GetValue())
-				/ 5;
-		roboGyro->SetZeroValue(averageValue);
-		roboGyro->Reset();
 	}
 
 	~Robot() {
@@ -249,7 +244,7 @@ public:
 		delete backRightEncoder;
 
 		//Lifter Motor
-		//delete lifterMotor;
+		delete lifterMotor;
 
 		//outputs
 		delete vacuumMotor1;
@@ -265,7 +260,7 @@ public:
 		delete driveTrain;
 		delete opIn;
 		delete vacuum1;
-		delete lifter;
+		//delete lifter;
 	}
 
 	void TestInit() {
@@ -285,13 +280,16 @@ public:
 		roboGyro->Reset(); //resets the Gyro
 		gyroPID->SetSetpoint(0.0); //sets the setpoint to zero
 		compressor->SetClosedLoopControl(true);
-
+		strafeDrivePID->SetSetpoint(0.0);
+		straightDrivePID->SetSetpoint(0.0);
 	}
 
 	/*
 	 * human operated mode loop
 	 */
 	void TeleopPeriodic() {
+		strafeDrivePID->Enable();
+		straightDrivePID->Enable();
 		vacuum1->Start();
 		gyroPID->Enable(); //enables PID
 		printf("InTeleop\n");
@@ -314,8 +312,7 @@ public:
 		SmartDashboard::PutNumber("GyroAngle", roboGyro->GetAngle());
 		SmartDashboard::PutNumber("GyroAngle", roboGyro->GetRate());
 		SmartDashboard::PutNumber("JoystickThrottle", opIn->GetThrottle());
-		SmartDashboard::PutBoolean("Compressor Enabled?",
-				compressor->Enabled());
+		SmartDashboard::PutBoolean("Compressor Enabled?", compressor->Enabled());
 		SmartDashboard::PutNumber("StraightDistance",driveEncoders->GetDistanceStraight());
 		SmartDashboard::PutNumber("StrafeDistance",driveEncoders->GetDistanceStrafe());
 	}
@@ -330,7 +327,7 @@ public:
 		strafeDrivePID->SetSetpoint(0.0);
 		straightDrivePID->SetSetpoint(0.0);
 		count = 0;
-		//compressor->Enabled();
+		compressor->Enabled();
 	}
 
 	/*
@@ -362,7 +359,7 @@ public:
 		case 2:
 			gyroPID->SetPIDValues(gyroStraightP, gyroStraightI, gyroStraightD);
 			gyroPID->Reset();
-			//driveTrain->DriveForward(.1*(count)/60.0); //needs to be changed to distances
+			driveTrain->DriveForward(.1*(count)/60.0); //needs to be changed to distances
 			count++;
 			if ((count / 20) == 20) {
 				count = 0;
@@ -378,7 +375,7 @@ public:
 			}
 			break;
 		case 4:
-			//driveTrain->DriveRight(.25); //needs to be changed to distances
+			driveTrain->DriveRight(.25); //needs to be changed to distances
 			count++;
 			if ((count / 20) == 3) {
 				count = 0;

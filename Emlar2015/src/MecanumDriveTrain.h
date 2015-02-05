@@ -23,7 +23,6 @@ private:
 
 	OI* operatorInputs;
 	RobotDrive* robotDrive;	// robot drive system
-	DriveEncoders* driveEncoders;
 
 	/*
 	 ~MechanumDriveTrain() {
@@ -35,13 +34,12 @@ public:
 
 	MechanumDriveTrain(SpeedController* frontLeft, SpeedController* backLeft,
 			SpeedController* frontRight, SpeedController* backRight,
-			OI* oI,DriveEncoders* driveEncoders) {
+			OI* oI) {
 		operatorInputs = oI;
 		frontLeftWheel = frontLeft;
 		rearLeftWheel = backLeft;
 		frontRightWheel = frontRight;
 		rearRightWheel = backRight;
-		this->driveEncoders = driveEncoders;
 		robotDrive = new RobotDrive(frontLeft, frontRight, backLeft, backRight);
 		robotDrive->SetExpiration(0.1);
 		robotDrive->SetInvertedMotor(RobotDrive::kFrontRightMotor, true);// invert the left side motors

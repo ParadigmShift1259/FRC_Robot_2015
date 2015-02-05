@@ -9,8 +9,8 @@
 
 	void MechanumDriveTrain::Drive() {
 		double y = operatorInputs->GetY();
-		double x = operatorInputs->GetX();
-		double twist = -operatorInputs->GetTwist();
+		double x = straifPIDOffset;
+		double twist = gyroPIDOffset;
 		robotDrive->MecanumDrive_Cartesian(
 				y,
 				x,
