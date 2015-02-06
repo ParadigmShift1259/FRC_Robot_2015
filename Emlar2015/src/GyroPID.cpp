@@ -7,6 +7,7 @@ GyroPID::GyroPID(double p, double i, double d, CorrectedGyro* roboGyro, Mechanum
 {
 	this->driveTrain = driveTrain;
 	this->roboGyro = roboGyro;
+
 	SetAbsoluteTolerance(0.0);
 
 	// Use these to get going:
@@ -21,7 +22,9 @@ void GyroPID::SetPIDValues(double p,double i,double d) {
 
 double GyroPID::ReturnPIDInput()
 {
-	return -roboGyro->GetAngle();
+
+	return roboGyro->GetAngle();
+
 	// Return your input value for the PID loop
 	// e.g. a sensor, like a potentiometer:
 	// yourPot->SetAverageVoltage() / kYourMaxVoltage;	

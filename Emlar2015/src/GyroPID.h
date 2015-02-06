@@ -5,12 +5,13 @@
 #include "Commands/PIDSubsystem.h"
 #include "WPILib.h"
 #include "CorrectedGyro.h"
-
+#include "OI.h"
 class GyroPID: public PIDSubsystem
 {
 private:
 	CorrectedGyro* roboGyro;
 	MechanumDriveTrain* driveTrain;
+
 public:
 	GyroPID(double p, double i, double d, CorrectedGyro* roboGyro, MechanumDriveTrain* driveTrain);
 	double ReturnPIDInput();

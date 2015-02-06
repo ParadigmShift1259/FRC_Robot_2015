@@ -94,8 +94,8 @@ private:
 	int count = 0;
 
 	//PID Coefficients
-	double gyroStraightP = 0.5;
-	double gyroStraightI = 0.03;
+	double gyroStraightP = 0.05;
+	double gyroStraightI = 0.003;
 	double gyroStraightD = 0.1;
 
 	double gyroStrafeP = 0.001;
@@ -282,6 +282,7 @@ public:
 		compressor->SetClosedLoopControl(true);
 		strafeDrivePID->SetSetpoint(0.0);
 		straightDrivePID->SetSetpoint(0.0);
+		gyroPID->Enable(); //enables PID
 	}
 
 	/*
@@ -289,12 +290,16 @@ public:
 	 */
 	void TeleopPeriodic() {
 		strafeDrivePID->Enable();
+
 		straightDrivePID->Enable();
 		vacuum1->Start();
-		gyroPID->Enable(); //enables PID
+
 		printf("InTeleop\n");
 		driveTrain->Drive(); //tells the robot to drive
-
+		//gyroPID->SetSetpointRelative(opIn->GetTwist());
+		if(!opIn->GetTrigger()) {
+			gyroPID->SetSetpoint(roboGyro->GetAngle());
+		}
 		//put numbers to the smart dashboard for diagnostics
 		//PDP Values from the drive
 		SmartDashboard::PutNumber("FrontLeftMotorPower",

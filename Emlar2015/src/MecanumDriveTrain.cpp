@@ -9,13 +9,22 @@
 
 	void MechanumDriveTrain::Drive() {
 		double y = operatorInputs->GetY();
-		double x = straifPIDOffset;
-		double twist = gyroPIDOffset;
+		double x = operatorInputs->GetX();
+		double twist = operatorInputs->GetTwist();
+		if(operatorInputs->GetTrigger())
+		{
 		robotDrive->MecanumDrive_Cartesian(
 				y,
 				x,
-				//gyroPIDOffset
-				twist);
+				gyroPIDOffset
+				);
+		}
+		else {
+			robotDrive->MecanumDrive_Cartesian(
+					y,
+					x,
+					twist);
+		}
 	}
 
 	void MechanumDriveTrain::DriveForward(double distance) {
