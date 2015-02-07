@@ -20,15 +20,15 @@ private:
 	double d;
 
 	static const int STRAIGHT = 1;
-	static const int STRAIF = 2;
+	static const int STRAFE = 2;
 
 	int axis;
 
 	DriveEncoders* driveEncoders;
-	MechanumDriveTrain* driveTrain;
+	MecanumDriveTrain* driveTrain;
 public:
 	EncoderDrivePID(double p, double i, double d, DriveEncoders* driveEncoders,
-			MechanumDriveTrain* driveTrain, int axis);
+			MecanumDriveTrain* driveTrain, int axis);
 	double ReturnPIDInput();
 	void UsePIDOutput(double output);
 	void InitDefaultCommand();

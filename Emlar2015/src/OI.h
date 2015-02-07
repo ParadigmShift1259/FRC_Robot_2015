@@ -13,6 +13,7 @@ private:
 	double twist = 0;
 	bool lastTriggered = false;
 	bool triggerState = false;
+	bool button2LastCalled = false;
 
 	const double shiftPerCycle = .01;
 
@@ -28,6 +29,7 @@ public:
 	bool GetTrigger();
 	double GetThrottle();
 	Joystick* GetJoystick() const;
+	bool GetButton2();
 };
 
 #endif /* SRC_OI_H_ */

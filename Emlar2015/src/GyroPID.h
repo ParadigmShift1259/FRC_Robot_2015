@@ -10,15 +10,19 @@ class GyroPID: public PIDSubsystem
 {
 private:
 	CorrectedGyro* roboGyro;
-	MechanumDriveTrain* driveTrain;
+	MecanumDriveTrain* driveTrain;
+
+	double setpoint;
 
 public:
-	GyroPID(double p, double i, double d, CorrectedGyro* roboGyro, MechanumDriveTrain* driveTrain);
+	GyroPID(double p, double i, double d, CorrectedGyro* roboGyro, MecanumDriveTrain* driveTrain);
 	double ReturnPIDInput();
+	double GetSetpoint();
 	void UsePIDOutput(double output);
 	void SetPIDValues(double p,double i,double d);
 	void InitDefaultCommand();
 	void SetSetpoint(double setpoint);
+	void SetSetpointRelative(double setpoint);
 	void Reset();
 };
 

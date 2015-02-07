@@ -72,6 +72,17 @@ double OI::GetTwist() {
 	return twist;
 }
 
+bool OI::GetButton2() {
+	bool buttonStatus = mainJoystick->GetRawButton(2);
+	if (!button2LastCalled) {
+		button2LastCalled = buttonStatus;
+		return buttonStatus;
+	} else {
+		button2LastCalled = buttonStatus;
+		return false;
+	}
+}
+
 bool OI::GetTrigger() {
 	if (!lastTriggered && mainJoystick->GetTrigger()) {
 		triggerState = !triggerState;

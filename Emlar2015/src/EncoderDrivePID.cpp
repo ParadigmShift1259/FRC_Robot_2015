@@ -10,7 +10,7 @@
 #include "LiveWindow/LiveWindow.h"
 
 EncoderDrivePID::EncoderDrivePID(double p, double i, double d, DriveEncoders* driveEncoders,
-		MechanumDriveTrain* driveTrain, int axis) : //axis: 2=straight, 1=straif
+		MecanumDriveTrain* driveTrain, int axis) : //axis: 2=straight, 1=straif
 		PIDSubsystem("EncoderDrivePID", p, i, d) {
 	this->p = p;
 	this->i = i;
@@ -38,10 +38,10 @@ void EncoderDrivePID::Reset() {
 void EncoderDrivePID::UsePIDOutput(double output) {
 	switch (axis) {
 		case STRAIGHT:
-			driveTrain->SetStraightOffset(output);
+			driveTrain->SetStrafeOffset(output);
 			break;
-		case STRAIF:
-			driveTrain->SetStraifOffset(output);
+		case STRAFE:
+			driveTrain->SetStraightOffset(-output);
 			break;
 		}
 }
@@ -49,10 +49,10 @@ void EncoderDrivePID::UsePIDOutput(double output) {
 double EncoderDrivePID::ReturnPIDInput() {
 	double input = 0;
 	switch (axis) {
-	case STRAIGHT:
+	case STRAFE:
 		input = driveEncoders->GetDistanceStraight();
 		break;
-	case STRAIF:
+	case STRAIGHT:
 		input = driveEncoders->GetDistanceStrafe();
 		break;
 	}
