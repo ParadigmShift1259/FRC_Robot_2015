@@ -15,8 +15,8 @@ private:
 	AnalogInput* gyro;
 	AnalogInput* temp;
 	double zero;
-	double deadband;
-	double sensitivity;
+	double deadband = 7;
+	double sensitivity = 0.007;
 	double maxNum;
 	double averageNumSize;
 	double sampleRate;
