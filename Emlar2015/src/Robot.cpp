@@ -125,6 +125,7 @@ private:
 	AnalogInput* therm;
 	AnalogInput* gyro;
 	AnalogInput* vacuumSensor1;
+	SPI* analogSensors;
 	Joystick* stick;			//currently the only joystick
 
 	//Lifter Motor
@@ -164,6 +165,9 @@ private:
 	EncoderDrivePID* straightDrivePID;
 	EncoderDrivePID* strafeDrivePID;
 
+	uint8_t* dataOut;
+	uint8_t* dataIn;
+
 public:
 
 	void RobotInit() {
@@ -174,6 +178,7 @@ public:
 		stick = new Joystick(joystickChannel);
 		accelerometer = new BuiltInAccelerometer();
 		vacuumSensor1 = new AnalogInput(vacuumSensor1Channel);
+		analogSensors = new SPI(SPI::kMXP);
 
 		//Drive Motors
 		frontLeftWheel = new Talon(frontLeftChannel);
@@ -233,6 +238,11 @@ public:
 				driveEncoders, driveTrain, STRAIGHT);
 		strafeDrivePID = new EncoderDrivePID(straightP, straightI, straightD,
 				driveEncoders, driveTrain, STRAFE);
+		analogSensors->SetClockRate(10000);
+		analogSensors->SetLSBFirst();
+		analogSensors->SetSampleDataOnFalling();
+		analogSensors->SetClockActiveLow();
+		analogSensors->SetChipSelectActiveLow();
 	}
 
 	~Robot() {
@@ -242,6 +252,7 @@ public:
 		delete stick;
 		delete accelerometer;
 		delete vacuumSensor1;
+		delete analogSensors;
 
 		//solenoids
 		delete toteGrabber;
@@ -278,15 +289,37 @@ public:
 		delete opIn;
 		delete vacuum1;
 		delete lifter;
+
+
+		delete dataIn;
+		delete dataOut;
 	}
 
 	void TestInit() {
-		roboGyro->Reset();
-
+		//roboGyro->Reset();
+		vacuum1->Start();
+		printf("End of Test Init\n");
 	}
 
 	void TestPeriodic() {
-		SmartDashboard::PutNumber("GyroAngle", roboGyro->GetAngle());
+
+		uint8_t num1;
+		uint8_t num2;
+		dataIn = &num1;
+		dataOut = &num2;
+
+		double number;
+		*dataIn = 0b10000000;
+		analogSensors->Transaction(dataIn,dataOut,8);
+		printf("1st Transaction = %i\n",*dataIn);
+		number = (*dataOut)<<8;
+		*dataIn = 0b10000000;
+		analogSensors->Transaction(dataIn,dataOut,8);
+		printf("2nd Transaction = %i\n",*dataIn);
+		number = number + ((*dataOut)>>6);
+		printf("number from spi = %f\n",number);
+
+		printf("number from analog port 2 = %f",vacuumSensor1->GetVoltage());
 	}
 
 	/*
