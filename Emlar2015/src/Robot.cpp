@@ -307,8 +307,9 @@ public:
 	 * human operated mode loop
 	 */
 	void TeleopPeriodic() {
+		lifter->AutoGrabTote();
 		strafeDrivePID->Enable();
-
+		lifter->MoveTo(COOPSTEP);
 		straightDrivePID->Enable();
 		vacuum1->Start();
 

@@ -92,7 +92,7 @@ bool OI::GetTrigger() {
 }
 
 double OI::GetThrottle() {
-	return mainJoystick->GetThrottle() + 2.1;
+	return mainJoystick->GetThrottle() + 2.00000001;
 }
 
 Joystick* OI::GetJoystick() const {

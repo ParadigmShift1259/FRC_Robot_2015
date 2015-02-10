@@ -20,9 +20,11 @@ Lifter::Lifter(double p, double i, double d, CANTalon* lifterMotor,
 }
 
 void Lifter::BeginAutoGrabTote() {
-	lifterMotor->SetPosition(levels[TOTE]);
-	currentSetpoint = TOTE;
-	grabbingTote = true;
+	if (!grabbingTote) {
+		lifterMotor->SetPosition(levels[TOTE]);
+		currentSetpoint = TOTE;
+		grabbingTote = true;
+	}
 }
 void Lifter::RetractVacuum() {
 	vacuumDeployer->Set(vacuumDeployer->kForward);
@@ -82,7 +84,7 @@ bool Lifter::InPos() {
 }
 
 void Lifter::MoveTo(int step) {
-	if (step <= 7 && step >= 0) {
+	if (step <= 7 && step >= 0 && !grabbingTote) {
 		lifterMotor->SetPosition(levels[step]);
 	}
 }
