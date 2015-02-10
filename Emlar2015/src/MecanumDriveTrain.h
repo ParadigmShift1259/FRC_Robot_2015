@@ -1,5 +1,5 @@
 /*
- * MechanumDriveTrain.h
+ * MecanumDriveTrain.h
  *
  *  Created on: Jan 17, 2015
  *      Author: Programming
@@ -7,16 +7,19 @@
 #include "OI.h"
 #include "DriveEncoders.h"
 
-#ifndef SRC_MECHANUMDRIVETRAIN_H_
-#define SRC_MECHANUMDRIVETRAIN_H_
+#ifndef SRC_MECANUMDRIVETRAIN_H_
+#define SRC_MECANUMDRIVETRAIN_H_
 
-class MechanumDriveTrain {
+class MecanumDriveTrain {
 private:
-	double gyroPIDOffset		= 0;
-	double straightPIDOffset	= 0;
-	double straifPIDOffset		= 0;
+	bool gyroPIDDisabled;
 
-	SpeedController* frontLeftWheel;
+	double gyroPIDOffset = 0;
+	double straightPIDOffset = 0;
+	double strafePIDOffset = 0;
+	double deadband = 1.0;
+
+	SpeedController * frontLeftWheel;
 	SpeedController* rearLeftWheel;
 	SpeedController* frontRightWheel;
 	SpeedController* rearRightWheel;
@@ -32,9 +35,8 @@ private:
 
 public:
 
-	MechanumDriveTrain(SpeedController* frontLeft, SpeedController* backLeft,
-			SpeedController* frontRight, SpeedController* backRight,
-			OI* oI) {
+	MecanumDriveTrain(SpeedController* frontLeft, SpeedController* backLeft,
+			SpeedController* frontRight, SpeedController* backRight, OI* oI) {
 		operatorInputs = oI;
 		frontLeftWheel = frontLeft;
 		rearLeftWheel = backLeft;
@@ -47,13 +49,15 @@ public:
 		robotDrive->SetSafetyEnabled(false);
 	}
 	void Drive();
-
+	void Turn(double degrees, double gyroAngle);
+	bool GyroPIDDisabled();
+	void EnableTurn();
 	void SetGyroOffset(double offset);
 	void SetAccelOffset(double offset);
 	void DriveForward(double speed);
 	void DriveRight(double speed);
 	void SetStraightOffset(double offset);
-	void SetStraifOffset(double offset);
+	void SetStrafeOffset(double offset);
 	void Stop();
 
 };

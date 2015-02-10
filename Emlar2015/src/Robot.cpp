@@ -17,7 +17,8 @@
 class Robot: public IterativeRobot {
 
 private:
-	const double pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286;
+	const double pi =
+			3.141592653589793238462643383279502884197169399375105820974944592307816406286;
 
 	//drive encoder information
 	const double drivecpr = 360.0;
@@ -25,7 +26,7 @@ private:
 	//final information const double gearRatio = 15.0/40.0;
 	const double wheelDiameter = 6.0;
 	const double rotationsPerInch = pi * wheelDiameter * gearRatio;
-	const double inchesPerClickDrive = rotationsPerInch /  drivecpr;
+	const double inchesPerClickDrive = rotationsPerInch / drivecpr;
 
 	//lifter encoder information
 	const double liftercpr = 120.0;
@@ -80,11 +81,12 @@ private:
 	const uint32_t lifterCanChannel = 1;
 
 	//piston channels
-	const uint8_t toteGrabberLChannel = 0;
-	const uint8_t toteGrabberRChannel = 1;
-	const uint8_t toteDeployLChannel = 2;
-	const uint8_t toteDeployRChannel = 3;
-	const uint8_t vacuumDeployChannel = 4;
+	const uint32_t toteGrabberChannelIn = 0;
+	const uint32_t toteGrabberChannelOut = 1;
+	const uint32_t toteDeployChannelIn = 2;
+	const uint32_t toteDeployChannelOut = 3;
+	const uint32_t vacuumDeployChannelIn = 4;
+	const uint32_t vacuumDeployChannelOut = 5;
 
 	//channels for other things
 	const uint32_t joystickChannel = 0;
@@ -93,21 +95,24 @@ private:
 	int currentAutoOperation = 0;
 	int count = 0;
 
+	//Drivetrain temporary Storage
+	double lastSetpoint;
+
 	//PID Coefficients
-	double gyroStraightP = 0.05;
-	double gyroStraightI = 0.003;
+	double gyroStraightP = 0.06;
+	double gyroStraightI = 0.004;
 	double gyroStraightD = 0.1;
 
 	double gyroStrafeP = 0.001;
 	double gyroStrafeI = 0.000005;
 	double gyroStrafeD = 2000.0;
 
-	double strafeP = 0.1;
-	double strafeI = 0.0;
+	double strafeP = 5.0;
+	double strafeI = 0.1;
 	double strafeD = 0.0;
 
 	double straightP = 0.1;
-	double straightI = 0.0;
+	double straightI = 0.01;
 	double straightD = 0.0;
 
 	double lifterP = 0.1;
@@ -138,11 +143,9 @@ private:
 	Encoder* backRightEncoder;
 
 	//Pistons
-	Solenoid* toteGrabberL;
-	Solenoid* toteGrabberR;
-	Solenoid* toteDeployerL;
-	Solenoid* toteDeployerR;
-	Solenoid* vacuumDeployer;
+	DoubleSolenoid* toteGrabber;
+	DoubleSolenoid* toteDeployer;
+	DoubleSolenoid* vacuumDeployer;
 
 	//Other Outputs
 	Talon* vacuumMotor1;
@@ -151,10 +154,10 @@ private:
 	//Controlling Objects
 	Vacuum* vacuum1;
 	OI* opIn;
-	MechanumDriveTrain* driveTrain;
+	MecanumDriveTrain* driveTrain;
 	DriveEncoders* driveEncoders;
 	CorrectedGyro* roboGyro;
-	//Lifter* lifter;
+	Lifter* lifter;
 
 	//PID Loops
 	GyroPID* gyroPID;
@@ -188,6 +191,14 @@ public:
 		backRightEncoder = new Encoder(backRightEncoderChannelA,
 				backRightEncoderChannelA);
 
+		//Solenoids
+		toteGrabber = new DoubleSolenoid(toteGrabberChannelOut,
+				toteGrabberChannelIn);
+		toteDeployer = new DoubleSolenoid(toteDeployChannelOut,
+				toteDeployChannelIn);
+		vacuumDeployer = new DoubleSolenoid(vacuumDeployChannelOut,
+				vacuumDeployChannelIn);
+
 		//Lifter Motor
 		lifterMotor = new CANTalon(lifterCanChannel);
 
@@ -207,10 +218,11 @@ public:
 		opIn = new OI(stick);
 		driveEncoders = new DriveEncoders(frontLeftEncoder, backLeftEncoder,
 				frontRightEncoder, backRightEncoder);
-		driveTrain = new MechanumDriveTrain(frontLeftWheel, backLeftWheel,
+		driveTrain = new MecanumDriveTrain(frontLeftWheel, backLeftWheel,
 				frontRightWheel, backRightWheel, opIn);
 		roboGyro = new CorrectedGyro(gyro, therm);
-		//lifter = new Lifter(lifterP, lifterI, lifterD, lifterMotor);
+		lifter = new Lifter(lifterP, lifterI, lifterD, lifterMotor, toteGrabber,
+				toteDeployer, vacuumDeployer, vacuum1);
 
 		//user generated classes setup
 		roboGyro->Reset();
@@ -230,6 +242,11 @@ public:
 		delete stick;
 		delete accelerometer;
 		delete vacuumSensor1;
+
+		//solenoids
+		delete toteGrabber;
+		delete toteDeployer;
+		delete vacuumDeployer;
 
 		//Drive Motors
 		delete frontLeftWheel;
@@ -260,7 +277,7 @@ public:
 		delete driveTrain;
 		delete opIn;
 		delete vacuum1;
-		//delete lifter;
+		delete lifter;
 	}
 
 	void TestInit() {
@@ -283,23 +300,43 @@ public:
 		strafeDrivePID->SetSetpoint(0.0);
 		straightDrivePID->SetSetpoint(0.0);
 		gyroPID->Enable(); //enables PID
+		gyroPID->SetSetpoint(0.0); //sets the setpoint to zero
 	}
 
 	/*
 	 * human operated mode loop
 	 */
 	void TeleopPeriodic() {
+		lifter->AutoGrabTote();
 		strafeDrivePID->Enable();
-
+		lifter->MoveTo(COOPSTEP);
 		straightDrivePID->Enable();
 		vacuum1->Start();
 
+		//driveTrain->DriveRight(opIn->GetX()); //tells the robot to drive
 		printf("InTeleop\n");
-		driveTrain->Drive(); //tells the robot to drive
-		//gyroPID->SetSetpointRelative(opIn->GetTwist());
-		if(!opIn->GetTrigger()) {
-			gyroPID->SetSetpoint(roboGyro->GetAngle());
+
+		if (!driveTrain->GyroPIDDisabled()) {
+			gyroPID->Enable();
+			if (!opIn->GetTrigger()) {
+				gyroPID->SetSetpoint(roboGyro->GetAngle());
+				driveTrain->Drive();
+			}
 		}
+
+		else {
+			gyroPID->Disable();
+			driveTrain->Turn(lastSetpoint + 180.0, roboGyro->GetAngle());
+		}
+
+		//gyroPID->SetSetpointRelative(opIn->GetTwist());
+		if (opIn->GetButton2()) {
+			lastSetpoint = roboGyro->GetAngle();
+			gyroPID->Disable();
+			gyroPID->SetSetpointRelative(180.0);
+			driveTrain->EnableTurn();
+		}
+
 		//put numbers to the smart dashboard for diagnostics
 		//PDP Values from the drive
 		SmartDashboard::PutNumber("FrontLeftMotorPower",
@@ -315,11 +352,13 @@ public:
 		SmartDashboard::PutNumber("JoystickX", opIn->GetY());
 		SmartDashboard::PutNumber("JoystickTwist", opIn->GetTwist());
 		SmartDashboard::PutNumber("GyroAngle", roboGyro->GetAngle());
-		SmartDashboard::PutNumber("GyroAngle", roboGyro->GetRate());
 		SmartDashboard::PutNumber("JoystickThrottle", opIn->GetThrottle());
-		SmartDashboard::PutBoolean("Compressor Enabled?", compressor->Enabled());
-		SmartDashboard::PutNumber("StraightDistance",driveEncoders->GetDistanceStraight());
-		SmartDashboard::PutNumber("StrafeDistance",driveEncoders->GetDistanceStrafe());
+		SmartDashboard::PutBoolean("Compressor Enabled?",
+				compressor->Enabled());
+		SmartDashboard::PutNumber("StraightDistance",
+				driveEncoders->GetDistanceStraight());
+		SmartDashboard::PutNumber("StrafeDistance",
+				driveEncoders->GetDistanceStrafe());
 	}
 
 	/*
@@ -364,7 +403,7 @@ public:
 		case 2:
 			gyroPID->SetPIDValues(gyroStraightP, gyroStraightI, gyroStraightD);
 			gyroPID->Reset();
-			driveTrain->DriveForward(.1*(count)/60.0); //needs to be changed to distances
+			driveTrain->DriveForward(.1 * (count) / 60.0); //needs to be changed to distances
 			count++;
 			if ((count / 20) == 20) {
 				count = 0;
@@ -413,6 +452,7 @@ public:
 		gyroPID->Disable(); //stops the gyro PID
 		vacuum1->Stop();
 		currentAutoOperation = 0;
+		driveEncoders->ResetEncoders();
 	}
 };
 
