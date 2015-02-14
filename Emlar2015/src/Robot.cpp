@@ -10,6 +10,7 @@
 #include "DriveEncoders.h"
 #include "EncoderDrivePID.h"
 #include "Lifter.h"
+#include "VacuumSensors.h"
 
 /**
  * This is a demo program showing how to use Mechanum control with the RobotDrive class.
@@ -36,13 +37,10 @@ private:
 	static const int STRAFE = 2;
 
 	//Lifter Position Definitions
-	static const int FLOOR = 1;
-	static const int TOTE = 2;
-	static const int COOPSTEP = 3;
-	static const int COOPSTEP1TOTE = 4;
-	static const int COOPSTEP2TOTE = 5;
-	static const int COOPSTEP3TOTE = 6;
-	static const int SCORINGPLATFORM = 7;
+	static const int FLOOR = 0.0; //make sure to change the ones in the lifter class
+	static const int TOTE = 12.0; //make sure to change the ones in the lifter class
+	static const int COOPSTEP = 6.25;
+	static const int SCORINGPLATFORM = 2.0;
 
 	//Constants for Robot Properties
 	//static const double distancePerTick		= ;
@@ -119,12 +117,15 @@ private:
 	double lifterI = 0.0;
 	double lifterD = 0.0;
 
+	double number = 0;
+
 	//inputs
 	PowerDistributionPanel* pdp;
 	Accelerometer* accelerometer;
 	AnalogInput* therm;
 	AnalogInput* gyro;
 	AnalogInput* vacuumSensor1;
+	SPI* vacuumSPIBus;
 	Joystick* stick;			//currently the only joystick
 
 	//Lifter Motor
@@ -152,6 +153,7 @@ private:
 	Compressor* compressor;
 
 	//Controlling Objects
+	VacuumSensors* vacuumSensors;
 	Vacuum* vacuum1;
 	OI* opIn;
 	MecanumDriveTrain* driveTrain;
@@ -164,6 +166,9 @@ private:
 	EncoderDrivePID* straightDrivePID;
 	EncoderDrivePID* strafeDrivePID;
 
+	uint8_t* dataOut;
+	uint8_t* dataIn;
+
 public:
 
 	void RobotInit() {
@@ -174,6 +179,7 @@ public:
 		stick = new Joystick(joystickChannel);
 		accelerometer = new BuiltInAccelerometer();
 		vacuumSensor1 = new AnalogInput(vacuumSensor1Channel);
+		vacuumSPIBus = new SPI(SPI::kMXP);
 
 		//Drive Motors
 		frontLeftWheel = new Talon(frontLeftChannel);
@@ -222,9 +228,10 @@ public:
 				frontRightWheel, backRightWheel, opIn);
 		roboGyro = new CorrectedGyro(gyro, therm);
 		lifter = new Lifter(lifterP, lifterI, lifterD, lifterMotor, toteGrabber,
-				toteDeployer, vacuumDeployer, vacuum1);
+				toteDeployer, vacuumDeployer, vacuum1, vacuumSensors);
 
 		//user generated classes setup
+		driveTrain->SetDriveEncoders(driveEncoders);
 		roboGyro->Reset();
 		//PID Loops
 		gyroPID = new GyroPID(gyroStraightP, gyroStraightI, gyroStraightD,
@@ -233,6 +240,11 @@ public:
 				driveEncoders, driveTrain, STRAIGHT);
 		strafeDrivePID = new EncoderDrivePID(straightP, straightI, straightD,
 				driveEncoders, driveTrain, STRAFE);
+		vacuumSPIBus->SetClockRate(50000);
+		vacuumSPIBus->SetMSBFirst();
+		vacuumSPIBus->SetSampleDataOnRising();
+		vacuumSPIBus->SetClockActiveHigh();
+		vacuumSPIBus->SetChipSelectActiveLow();
 	}
 
 	~Robot() {
@@ -242,6 +254,7 @@ public:
 		delete stick;
 		delete accelerometer;
 		delete vacuumSensor1;
+		delete vacuumSPIBus;
 
 		//solenoids
 		delete toteGrabber;
@@ -278,15 +291,21 @@ public:
 		delete opIn;
 		delete vacuum1;
 		delete lifter;
+		delete vacuumSensors;
+
+		delete dataIn;
+		delete dataOut;
 	}
 
 	void TestInit() {
-		roboGyro->Reset();
-
+		//roboGyro->Reset();
+		printf("End of Test Init\n");
+		number = 0;
+		count = 0;
 	}
 
 	void TestPeriodic() {
-		SmartDashboard::PutNumber("GyroAngle", roboGyro->GetAngle());
+		backLeftWheel->Set(stick->GetX());
 	}
 
 	/*
@@ -311,10 +330,34 @@ public:
 		strafeDrivePID->Enable();
 		lifter->MoveTo(COOPSTEP);
 		straightDrivePID->Enable();
-		vacuum1->Start();
+		//vacuum1->Start();
 
 		//driveTrain->DriveRight(opIn->GetX()); //tells the robot to drive
 		printf("InTeleop\n");
+		if (false) {
+			lifter->MoveTo(COOPSTEP);
+		}
+		if (false) {
+			lifter->MoveTo(COOPSTEP + TOTE);
+		}
+		if (false) {
+			lifter->MoveTo(COOPSTEP + TOTE + TOTE);
+		}
+		if (false) {
+			lifter->MoveTo(COOPSTEP + TOTE + TOTE + TOTE);
+		}
+		if (false) {
+			lifter->MoveTo(SCORINGPLATFORM);
+		}
+		if (false) {
+			lifter->MoveTo(SCORINGPLATFORM + TOTE);
+		}
+		if (false) {
+			lifter->MoveTo(SCORINGPLATFORM + TOTE + TOTE);
+		}
+		if (false) {
+			lifter->MoveTo(SCORINGPLATFORM + TOTE + TOTE + TOTE);
+		}
 
 		if (!driveTrain->GyroPIDDisabled()) {
 			gyroPID->Enable();
@@ -384,49 +427,47 @@ public:
 		gyroPID->Enable();
 		switch (currentAutoOperation) {
 		case 0:
-			gyroPID->SetPIDValues(gyroStraightP, gyroStraightI, gyroStraightD);
-			driveTrain->DriveForward(.1 * (count) / 60.0); //needs to be changed to distances
-			count++;
-			if ((count / 20) == 20) {
-				count = 0;
+			driveTrain->Stop();
+			lifter->BeginAutoGrabTote();
+			if (!lifter->GrabbingTote()) {
 				currentAutoOperation++;
 			}
 			break;
 		case 1:
-			driveTrain->Stop();
-			count++;
-			if ((count / 20) == 3) {
-				count = 0;
+			gyroPID->SetPIDValues(gyroStraightP, gyroStraightI, gyroStraightD);
+			if (!driveTrain->DriveForward(120.0)) {		//inches
 				currentAutoOperation++;
 			}
 			break;
 		case 2:
-			gyroPID->SetPIDValues(gyroStraightP, gyroStraightI, gyroStraightD);
-			gyroPID->Reset();
-			driveTrain->DriveForward(.1 * (count) / 60.0); //needs to be changed to distances
-			count++;
-			if ((count / 20) == 20) {
-				count = 0;
+			driveTrain->Stop();
+			lifter->BeginAutoGrabTote();
+			if (!lifter->GrabbingTote()) {
 				currentAutoOperation++;
 			}
 			break;
 		case 3:
-			driveTrain->Stop();
-			count++;
-			if ((count / 20) == 3) {
-				count = 0;
+			gyroPID->SetPIDValues(gyroStraightP, gyroStraightI, gyroStraightD);
+			gyroPID->Reset();
+			if (!driveTrain->DriveForward(120.0)) {		//inches
 				currentAutoOperation++;
 			}
 			break;
 		case 4:
-			driveTrain->DriveRight(.25); //needs to be changed to distances
-			count++;
-			if ((count / 20) == 3) {
-				count = 0;
+			driveTrain->Stop();
+			lifter->BeginAutoGrabTote();
+			if (!lifter->GrabbingTote()) {
 				currentAutoOperation++;
 			}
 			break;
 		case 5:
+			gyroPID->SetPIDValues(gyroStrafeP, gyroStrafeI, gyroStrafeD);
+			gyroPID->Reset();
+			if (!driveTrain->DriveRight(120.0)) {		//inches
+				currentAutoOperation++;
+			}
+			break;
+		case 6:
 			driveTrain->Stop();
 			count++;
 			if ((count / 20) == 3) {
@@ -435,6 +476,7 @@ public:
 			}
 			break;
 		}
+		lifter->AutoGrabTote();
 	}
 
 	/*

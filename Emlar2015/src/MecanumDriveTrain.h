@@ -18,6 +18,7 @@ private:
 	double straightPIDOffset = 0;
 	double strafePIDOffset = 0;
 	double deadband = 1.0;
+	double lastSpeed = 0;
 
 	SpeedController * frontLeftWheel;
 	SpeedController* rearLeftWheel;
@@ -26,6 +27,7 @@ private:
 
 	OI* operatorInputs;
 	RobotDrive* robotDrive;	// robot drive system
+	DriveEncoders* driveEncoders;
 
 	/*
 	 ~MechanumDriveTrain() {
@@ -54,10 +56,11 @@ public:
 	void EnableTurn();
 	void SetGyroOffset(double offset);
 	void SetAccelOffset(double offset);
-	void DriveForward(double speed);
-	void DriveRight(double speed);
+	bool DriveForward(double speed);
+	bool DriveRight(double speed);
 	void SetStraightOffset(double offset);
 	void SetStrafeOffset(double offset);
+	void SetDriveEncoders(DriveEncoders* driveEncoders);
 	void Stop();
 
 };
