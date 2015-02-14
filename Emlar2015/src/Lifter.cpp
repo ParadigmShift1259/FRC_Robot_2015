@@ -9,19 +9,24 @@
 
 Lifter::Lifter(double p, double i, double d, CANTalon* lifterMotor,
 		DoubleSolenoid* toteGrabber, DoubleSolenoid* toteDeployer,
-		DoubleSolenoid* vacuumDeployer, Vacuum* vacuum1) {
+		DoubleSolenoid* vacuumDeployer, Vacuum* vacuum1, VacuumSensors* vacuumSensors) {
 	this->lifterMotor = lifterMotor;
 	this->toteGrabber = toteGrabber;
 	this->toteDeployer = toteDeployer;
 	this->vacuumDeployer = vacuumDeployer;
 	this->vacuum1 = vacuum1;
-
+	this->vacuumSensors = vacuumSensors;
+	
 	lifterMotor->SetPID(p, i, d);
+}
+
+bool Lifter::GrabbingTote() {
+	return grabbingTote;
 }
 
 void Lifter::BeginAutoGrabTote() {
 	if (!grabbingTote) {
-		lifterMotor->SetPosition(levels[TOTE]);
+		lifterMotor->SetPosition(TOTE);
 		currentSetpoint = TOTE;
 		grabbingTote = true;
 	}
@@ -61,7 +66,7 @@ void Lifter::AutoGrabTote() {
 			if (countSinceLastRetract == vacuumOffCount) {
 				StopVacuums();
 				ReleaseTote();
-				lifterMotor->SetPosition(levels[FLOOR]);
+				lifterMotor->SetPosition(FLOOR);
 				currentSetpoint = FLOOR;
 			}
 			countSinceLastRetract++;
@@ -75,18 +80,17 @@ void Lifter::StopVacuums() {
 	vacuum1->Stop();
 }
 bool Lifter::VacuumsAttached() {
-	return vacuum1->IsAttached();
+	return vacuumSensors->IsAttached();
 }
 
 bool Lifter::InPos() {
-	double error = levels[currentSetpoint] - lifterMotor->GetPosition();
+	double error = currentSetpoint - lifterMotor->GetPosition();
 	return (error < threshold && error > -threshold);
 }
 
-void Lifter::MoveTo(int step) {
-	if (step <= 7 && step >= 0 && !grabbingTote) {
-		lifterMotor->SetPosition(levels[step]);
-	}
+void Lifter::MoveTo(double setpoint) {
+	lifterMotor->SetPosition(setpoint);
+	currentSetpoint = setpoint;
 }
 
 Lifter::~Lifter() {
