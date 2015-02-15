@@ -98,4 +98,3 @@ double OI::GetThrottle() {
 Joystick* OI::GetJoystick() const {
 	return mainJoystick;
 }
-

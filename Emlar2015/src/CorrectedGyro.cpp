@@ -117,4 +117,3 @@ double CorrectedGyro::GetRate() {
 CorrectedGyro::~CorrectedGyro() {
 
 }
-

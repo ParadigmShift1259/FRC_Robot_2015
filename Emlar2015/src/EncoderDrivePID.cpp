@@ -70,4 +70,3 @@ void EncoderDrivePID::Disable() {
 EncoderDrivePID::~EncoderDrivePID() {
 	// TODO Auto-generated destructor stub
 }
-

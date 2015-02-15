@@ -7,8 +7,7 @@
 
 #include <Vacuum.h>
 
-Vacuum::Vacuum(AnalogInput* vacuumSensor, SpeedController* vacuum) {
-	this->vacuumSensor = vacuumSensor;
+Vacuum::Vacuum(SpeedController* vacuum) {
 	this->vacuum = vacuum;
 }
 

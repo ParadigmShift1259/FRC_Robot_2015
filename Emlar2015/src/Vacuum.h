@@ -11,10 +11,9 @@
 #include "WPILib.h"
 
 class Vacuum {
-	AnalogInput* vacuumSensor;
 	SpeedController* vacuum;
 public:
-	Vacuum(AnalogInput* vacuumSensor, SpeedController* vacuum);
+	Vacuum(SpeedController* vacuum);
 	void Start();
 	void Stop();
 	bool IsAttached();
@@ -22,19 +21,3 @@ public:
 };
 
 #endif /* SRC_VACUUM_H_ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// All credit goes to Andrew Allyn for this code and any other code found on this robot.

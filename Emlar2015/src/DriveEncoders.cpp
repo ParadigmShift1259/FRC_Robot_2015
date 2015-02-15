@@ -60,4 +60,3 @@ void DriveEncoders::ResetEncoders() {
 DriveEncoders::~DriveEncoders() {
 	// TODO Auto-generated destructor stub
 }
-

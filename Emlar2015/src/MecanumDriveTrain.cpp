@@ -10,7 +10,7 @@
 void MecanumDriveTrain::Drive() {
 	double y = operatorInputs->GetY();
 	double x = operatorInputs->GetX();
-	double twist = operatorInputs->GetTwist();
+	double twist = -operatorInputs->GetTwist();
 	if (operatorInputs->GetTrigger()) {
 		robotDrive->MecanumDrive_Cartesian(y, x, gyroPIDOffset);
 	} else {
@@ -31,10 +31,6 @@ bool MecanumDriveTrain::DriveForward(double distance) {
 lastSpeed = speed;
 robotDrive->MecanumDrive_Cartesian(speed, strafePIDOffset, gyroPIDOffset);
 return (distanceDriven == distance);
-}
-
-void MecanumDriveTrain::SetDriveEncoders(DriveEncoders* driveEncoders){
-	this->driveEncoders = driveEncoders;
 }
 
 bool MecanumDriveTrain::DriveRight(double distance) {
@@ -70,12 +66,14 @@ gyroPIDDisabled = true;
 
 void MecanumDriveTrain::Turn(double degrees, double gyroAngle) {
 double error = degrees - gyroAngle;
+double y = operatorInputs->GetY();
+double x = operatorInputs->GetX();
 if (error > deadband || error < -deadband) {
 	if (error > 0) {
-		robotDrive->MecanumDrive_Cartesian(0, 0, 1.0);
+		robotDrive->MecanumDrive_Cartesian(y, x, -1.0);
 	}
 	if (error < 0) {
-		robotDrive->MecanumDrive_Cartesian(0, 0, -1.0);
+		robotDrive->MecanumDrive_Cartesian(y, x, 1.0);
 	}
 	SmartDashboard::GetNumber("Error", error);
 } else {
@@ -88,5 +86,5 @@ straightPIDOffset = offset;
 }
 
 void MecanumDriveTrain::SetGyroOffset(double offset) {
-gyroPIDOffset = offset;
+gyroPIDOffset = -offset;
 }

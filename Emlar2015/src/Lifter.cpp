@@ -9,14 +9,15 @@
 
 Lifter::Lifter(double p, double i, double d, CANTalon* lifterMotor,
 		DoubleSolenoid* toteGrabber, DoubleSolenoid* toteDeployer,
-		DoubleSolenoid* vacuumDeployer, Vacuum* vacuum1, VacuumSensors* vacuumSensors) {
+		DoubleSolenoid* vacuumDeployer, Vacuum* vacuums, VacuumSensors* vacuumSensors, IntakeWheels* intakeWheels, int numberOfVacuums) {
 	this->lifterMotor = lifterMotor;
 	this->toteGrabber = toteGrabber;
 	this->toteDeployer = toteDeployer;
 	this->vacuumDeployer = vacuumDeployer;
-	this->vacuum1 = vacuum1;
+	this->vacuums = vacuums;
 	this->vacuumSensors = vacuumSensors;
-	
+	this->intakeWheels = intakeWheels;
+	this->numberOfVacuums = numberOfVacuums;
 	lifterMotor->SetPID(p, i, d);
 }
 
@@ -26,11 +27,39 @@ bool Lifter::GrabbingTote() {
 
 void Lifter::BeginAutoGrabTote() {
 	if (!grabbingTote) {
-		lifterMotor->SetPosition(TOTE);
+		lifterMotor->Set(TOTE);
 		currentSetpoint = TOTE;
 		grabbingTote = true;
 	}
 }
+
+void Lifter::Drop() {
+	DeployTote();
+	dropping = true;
+	dropCount = 0;
+}
+
+bool Lifter::Zero() {
+	bool lifterLowerLimitClosed = lifterMotor->IsRevLimitSwitchClosed();
+	if(!lifterLowerLimitClosed){
+		lifterMotor->SetControlMode(lifterMotor->kSpeed);
+		lifterMotor->Set(-0.1);
+	} else {
+		lifterMotor->SetControlMode(lifterMotor->kPosition);
+	}
+	return lifterLowerLimitClosed;
+}
+
+void Lifter::ContinueDrop() {
+	if(dropping){
+		dropCount++;
+	}
+	if(dropCount/20.0 == 2) {
+		ReleaseTote();
+	}
+
+}
+
 void Lifter::RetractVacuum() {
 	vacuumDeployer->Set(vacuumDeployer->kForward);
 }
@@ -66,7 +95,7 @@ void Lifter::AutoGrabTote() {
 			if (countSinceLastRetract == vacuumOffCount) {
 				StopVacuums();
 				ReleaseTote();
-				lifterMotor->SetPosition(FLOOR);
+				lifterMotor->Set(FLOOR);
 				currentSetpoint = FLOOR;
 			}
 			countSinceLastRetract++;
@@ -74,10 +103,14 @@ void Lifter::AutoGrabTote() {
 	}
 }
 void Lifter::StartVacuums() {
-	vacuum1->Start();
+	for (int i = 0; i<numberOfVacuums; i++) {
+		vacuums[i].Start();
+	}
 }
 void Lifter::StopVacuums() {
-	vacuum1->Stop();
+	for (int i = 0; i<numberOfVacuums; i++) {
+		vacuums[i].Start();
+	}
 }
 bool Lifter::VacuumsAttached() {
 	return vacuumSensors->IsAttached();
@@ -89,11 +122,10 @@ bool Lifter::InPos() {
 }
 
 void Lifter::MoveTo(double setpoint) {
-	lifterMotor->SetPosition(setpoint);
+	lifterMotor->Set(setpoint);
 	currentSetpoint = setpoint;
 }
 
 Lifter::~Lifter() {
 	// TODO Auto-generated destructor stub
 }
-

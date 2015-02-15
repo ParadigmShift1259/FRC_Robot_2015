@@ -38,16 +38,19 @@ private:
 public:
 
 	MecanumDriveTrain(SpeedController* frontLeft, SpeedController* backLeft,
-			SpeedController* frontRight, SpeedController* backRight, OI* oI) {
+			SpeedController* frontRight, SpeedController* backRight, OI* oI, DriveEncoders* driveEncoders) {
 		operatorInputs = oI;
 		frontLeftWheel = frontLeft;
 		rearLeftWheel = backLeft;
 		frontRightWheel = frontRight;
 		rearRightWheel = backRight;
+		this->driveEncoders = driveEncoders;
 		robotDrive = new RobotDrive(frontLeft, frontRight, backLeft, backRight);
 		robotDrive->SetExpiration(0.1);
-		robotDrive->SetInvertedMotor(RobotDrive::kFrontRightMotor, true);// invert the left side motors
-		robotDrive->SetInvertedMotor(RobotDrive::kRearRightMotor, true);// you may need to change or remove this to match your robot
+		robotDrive->SetInvertedMotor(RobotDrive::kFrontRightMotor, false);// invert the left side motors
+		robotDrive->SetInvertedMotor(RobotDrive::kFrontLeftMotor, true);
+		robotDrive->SetInvertedMotor(RobotDrive::kRearRightMotor, false);// you may need to change or remove this to match your robot
+		robotDrive->SetInvertedMotor(RobotDrive::kRearLeftMotor, true);
 		robotDrive->SetSafetyEnabled(false);
 	}
 	void Drive();
@@ -60,7 +63,6 @@ public:
 	bool DriveRight(double speed);
 	void SetStraightOffset(double offset);
 	void SetStrafeOffset(double offset);
-	void SetDriveEncoders(DriveEncoders* driveEncoders);
 	void Stop();
 
 };
