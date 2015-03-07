@@ -83,6 +83,17 @@ bool OI::GetButton2() {
 	}
 }
 
+bool OI::GetButton3() {
+	bool buttonStatus = mainJoystick->GetRawButton(3);
+	if (!button3LastCalled) {
+		button3LastCalled = buttonStatus;
+		return buttonStatus;
+	} else {
+		button3LastCalled = buttonStatus;
+		return false;
+	}
+}
+
 bool OI::GetTrigger() {
 	if (!lastTriggered && mainJoystick->GetTrigger()) {
 		triggerState = !triggerState;

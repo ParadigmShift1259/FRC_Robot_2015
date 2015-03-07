@@ -36,7 +36,8 @@ private:
 	const double liftercpr = 120.0;
 	const double lifterGearRatio = 1.0;
 	const double lifterSprocketDiameter = 1.0;
-	const double lifterRotationsPerInch = pi * lifterSprocketDiameter * lifterGearRatio;
+	const double lifterRotationsPerInch = pi * lifterSprocketDiameter
+			* lifterGearRatio;
 	const double lifterInchesPerClick = lifterRotationsPerInch / liftercpr;
 
 	//Strafe and Straight Definitions
@@ -59,10 +60,10 @@ private:
 	const uint32_t backLeftPDPChannel = 1;
 	const uint32_t backRightPDPChannel = 3;
 
-	//PWM Channels for the drive motors
-	const uint32_t frontLeftChannel = 2;
-	const uint32_t frontRightChannel = 0;
-	const uint32_t backLeftChannel = 1;
+	//CAN Channels for the drive motors
+	const uint32_t frontLeftChannel = 0;
+	const uint32_t frontRightChannel = 1;
+	const uint32_t backLeftChannel = 2;
 	const uint32_t backRightChannel = 3;
 
 	//PWM Channels for the intake wheels
@@ -145,10 +146,10 @@ private:
 	CANTalon* lifterMotor;
 
 	//Drive Motors
-	Talon* frontLeftWheel;
-	Talon* backLeftWheel;
-	Talon* frontRightWheel;
-	Talon* backRightWheel;
+	CANTalon* frontLeftWheel;
+	CANTalon* backLeftWheel;
+	CANTalon* frontRightWheel;
+	CANTalon* backRightWheel;
 
 	//Drive Encoders
 	Encoder* frontLeftEncoder;
@@ -202,15 +203,13 @@ public:
 		vacuumSPIBus = new SPI(SPI::kMXP);
 		printf("inputs made\n");
 
-
 		//Drive Motors
-		frontLeftWheel = new Talon(frontLeftChannel);
-		backLeftWheel = new Talon(backLeftChannel);
-		frontRightWheel = new Talon(frontRightChannel);
-		backRightWheel = new Talon(backRightChannel);
+		frontLeftWheel = new CANTalon(frontLeftChannel);
+		backLeftWheel = new CANTalon(backLeftChannel);
+		frontRightWheel = new CANTalon(frontRightChannel);
+		backRightWheel = new CANTalon(backRightChannel);
 
 		printf("drive motors made\n");
-
 
 		//Intake Wheels
 		leftIntakeWheel = new Talon(leftIntakeWheelChannel);
@@ -227,7 +226,6 @@ public:
 		backRightEncoder = new Encoder(backRightEncoderChannelA,
 				backRightEncoderChannelA);
 
-
 		printf("drive encoders made\n");
 
 		//Solenoids
@@ -239,7 +237,6 @@ public:
 				vacuumDeployChannelIn);
 
 		printf("solenoids made\n");
-
 
 		//Lifter Motor
 		lifterMotor = new CANTalon(lifterCanChannel);
@@ -259,7 +256,8 @@ public:
 		lifterMotor->SetFeedbackDevice(CANTalon::QuadEncoder);
 		lifterMotor->ConfigLimitMode(CANTalon::kLimitMode_SwitchInputsOnly);
 		lifterMotor->ConfigEncoderCodesPerRev(liftercpr);
-		printf("wpi classes setup made\n");
+		backLeftWheel->SetControlMode(CANTalon::kSpeed);
+		printf("wpi classes setup done\n");
 
 		//user generated classes
 		printf("Made everything before user generated classes\n");
@@ -271,9 +269,11 @@ public:
 		driveTrain = new MecanumDriveTrain(frontLeftWheel, backLeftWheel,
 				frontRightWheel, backRightWheel, opIn, driveEncoders);
 		roboGyro = new CorrectedGyro(gyro, therm);
-		vacuums = {vacuum1};	//add the rest of the vaccums here and make sure number of vacuums is large enough
+		vacuums = {vacuum1};//add the rest of the vaccums here and make sure number of vacuums is large enough
 		lifter = new Lifter(lifterP, lifterI, lifterD, lifterMotor, toteGrabber,
-				toteDeployer, vacuumDeployer, vacuums, vacuumSensors,intakeWheels, numberOfVacuums);
+				toteDeployer, vacuumDeployer, vacuums, vacuumSensors,
+				intakeWheels, numberOfVacuums);
+		vacuumSensors = new VacuumSensors(vacuumSPIBus);
 
 		printf("user generated classes made\n");
 		//user generated classes setup
@@ -353,7 +353,7 @@ public:
 	}
 
 	void TestPeriodic() {
-		backLeftWheel->Set(stick->GetX());
+		printf("CH 0 vacuum sensors= %u \n", vacuumSensors->GetCH0());
 	}
 
 	/*
@@ -381,36 +381,41 @@ public:
 		//lifter->ContinueDrop();
 		strafeDrivePID->Enable();
 		straightDrivePID->Enable();
-
-		/*
-		if (false) {
-			lifter->MoveTo(COOPSTEP);
-		}
-		if (false) {
-			lifter->MoveTo(COOPSTEP + TOTE);
-		}
-		if (false) {
-			lifter->MoveTo(COOPSTEP + TOTE + TOTE);
-		}
-		if (false) {
-			lifter->MoveTo(COOPSTEP + TOTE + TOTE + TOTE);
-		}
-		if (false) {
-			lifter->MoveTo(SCORINGPLATFORM);
-		}
-		if (false) {
-			lifter->MoveTo(SCORINGPLATFORM + TOTE);
-		}
-		if (false) {
-			lifter->MoveTo(SCORINGPLATFORM + TOTE + TOTE);
-		}
-		if (false) {
-			lifter->MoveTo(SCORINGPLATFORM + TOTE + TOTE + TOTE);
+		if (lifter->Zeroed()) {
+			lifter->LifterQueuedFunctions();
+			if (false) {
+				lifter->MoveTo(COOPSTEP);
+			}
+			if (false) {
+				lifter->MoveTo(COOPSTEP + TOTE);
+			}
+			if (false) {
+				lifter->MoveTo(COOPSTEP + TOTE + TOTE);
+			}
+			if (false) {
+				lifter->MoveTo(COOPSTEP + TOTE + TOTE + TOTE);
+			}
+			if (false) {
+				lifter->MoveTo(SCORINGPLATFORM);
+			}
+			if (false) {
+				lifter->MoveTo(SCORINGPLATFORM + TOTE);
+			}
+			if (false) {
+				lifter->MoveTo(SCORINGPLATFORM + TOTE + TOTE);
+			}
+			if (false) {
+				lifter->MoveTo(SCORINGPLATFORM + TOTE + TOTE + TOTE);
+			}
+			if (false) {
+				lifter->Zero();
+			}
+		} else {
+			lifter->Zero();
 		}
 		if (false) {
 			lifter->Drop();
 		}
-		*/
 		if (!driveTrain->GyroPIDDisabled()) {
 			gyroPID->Enable();
 			if (!opIn->GetTrigger()) {
@@ -427,6 +432,11 @@ public:
 			gyroPID->Disable();
 			gyroPID->SetSetpointRelative(180.0);
 			driveTrain->EnableTurn();
+		}
+		if (opIn->GetButton3()) {
+			vacuum1->Start();
+		} else {
+			vacuum1->Stop();
 		}
 		//put numbers to the smart dashboard for diagnostics
 		//PDP Values from the drive
@@ -469,13 +479,13 @@ public:
 	 * autonomous mode loop
 	 */
 	void AutonomousPeriodic() {
-		/*
 		SmartDashboard::PutNumber("GyroValue", gyro->GetValue());
 		SmartDashboard::PutNumber("GyroAngle", roboGyro->GetAngle());
 		gyroPID->Enable();
 		switch (currentAutoOperation) {
 		case 0:
-			if (lifter->Zero()) {
+			lifter->Zero();
+			if (lifter->Zeroed()) {
 				currentAutoOperation++;
 			}
 			break;
@@ -551,10 +561,12 @@ public:
 			break;
 		case 10:
 			lifter->ReleaseTote();
+			currentAutoOperation++;
 			break;
+		default:
+		break;
 		}
-		lifter->AutoGrabTote();
-		*/
+		lifter->LifterQueuedFunctions();
 	}
 
 	/*

@@ -9,7 +9,9 @@
 
 Lifter::Lifter(double p, double i, double d, CANTalon* lifterMotor,
 		DoubleSolenoid* toteGrabber, DoubleSolenoid* toteDeployer,
-		DoubleSolenoid* vacuumDeployer, Vacuum* vacuums, VacuumSensors* vacuumSensors, IntakeWheels* intakeWheels, int numberOfVacuums) {
+		DoubleSolenoid* vacuumDeployer, Vacuum* vacuums,
+		VacuumSensors* vacuumSensors, IntakeWheels* intakeWheels,
+		int numberOfVacuums) {
 	this->lifterMotor = lifterMotor;
 	this->toteGrabber = toteGrabber;
 	this->toteDeployer = toteDeployer;
@@ -39,51 +41,41 @@ void Lifter::Drop() {
 	dropCount = 0;
 }
 
-bool Lifter::Zero() {
+bool Lifter::Zeroed() {
+	return zeroed;
+}
+
+void Lifter::Zero() {
 	bool lifterLowerLimitClosed = lifterMotor->IsRevLimitSwitchClosed();
-	if(!lifterLowerLimitClosed){
+	if (!lifterLowerLimitClosed) {
 		lifterMotor->SetControlMode(lifterMotor->kSpeed);
 		lifterMotor->Set(-0.1);
+		zeroed = false;
 	} else {
 		lifterMotor->SetControlMode(lifterMotor->kPosition);
+		zeroed = true;
+
 	}
-	return lifterLowerLimitClosed;
 }
 
-void Lifter::ContinueDrop() {
-	if(dropping){
+void Lifter::LifterQueuedFunctions() {
+	//tote dropping
+	if (dropping) {
 		dropCount++;
 	}
-	if(dropCount/20.0 == 2) {
+	if (dropCount / 20.0 == 2) {
 		ReleaseTote();
 	}
-
-}
-
-void Lifter::RetractVacuum() {
-	vacuumDeployer->Set(vacuumDeployer->kForward);
-}
-void Lifter::DeployTote() {
-	toteDeployer->Set(toteDeployer->kReverse);
-}
-void Lifter::RetractTote() {
-	toteDeployer->Set(toteDeployer->kForward);
-}
-void Lifter::GrabTote() {
-	toteGrabber->Set(toteGrabber->kReverse);
-}
-void Lifter::ReleaseTote() {
-	toteGrabber->Set(toteGrabber->kForward);
-}
-void Lifter::AutoGrabTote() {
-	SmartDashboard::PutBoolean("Grabbing", grabbingTote);
+	//tote grabbing
 	if (grabbingTote) {
 		if (currentSetpoint == TOTE && InPos()) {
 			StartVacuums();
-			vacuumDeployer->Set(vacuumDeployer->kReverse);
+			DeployVacuum();
 		}
 		if (currentSetpoint == FLOOR && InPos()) {
 			GrabTote();
+			lifterMotor->Set(TOTE);
+			currentSetpoint = TOTE;
 			grabbingTote = false;
 		}
 		if (VacuumsAttached()) {
@@ -101,15 +93,43 @@ void Lifter::AutoGrabTote() {
 			countSinceLastRetract++;
 		}
 	}
+	//emergency clear
+	if(emergencyClearing) {
+		clearCount++;
+	}
+	if(clearCount/20 == 1) {
+		emergencyClearing = false;
+		clearCount = 0;
+	}
+
 }
+void Lifter::DeployVacuum() {
+	vacuumDeployer->Set(vacuumDeployer->kReverse);
+}
+void Lifter::RetractVacuum() {
+	vacuumDeployer->Set(vacuumDeployer->kForward);
+}
+void Lifter::DeployTote() {
+	toteDeployer->Set(toteDeployer->kReverse);
+}
+void Lifter::RetractTote() {
+	toteDeployer->Set(toteDeployer->kForward);
+}
+void Lifter::GrabTote() {
+	toteGrabber->Set(toteGrabber->kReverse);
+}
+void Lifter::ReleaseTote() {
+	toteGrabber->Set(toteGrabber->kForward);
+}
+
 void Lifter::StartVacuums() {
-	for (int i = 0; i<numberOfVacuums; i++) {
+	for (int i = 0; i < numberOfVacuums; i++) {
 		vacuums[i].Start();
 	}
 }
 void Lifter::StopVacuums() {
-	for (int i = 0; i<numberOfVacuums; i++) {
-		vacuums[i].Start();
+	for (int i = 0; i < numberOfVacuums; i++) {
+		vacuums[i].Stop();
 	}
 }
 bool Lifter::VacuumsAttached() {
@@ -117,13 +137,22 @@ bool Lifter::VacuumsAttached() {
 }
 
 bool Lifter::InPos() {
-	double error = currentSetpoint - lifterMotor->GetPosition();
+	double error = lifterMotor->GetClosedLoopError();
 	return (error < threshold && error > -threshold);
 }
 
+void Lifter::StartEmergencyClear() {
+	emergencyClearing = true;
+	grabbingTote = false;
+	StopVacuums();
+	DeployVacuum();
+}
+
 void Lifter::MoveTo(double setpoint) {
-	lifterMotor->Set(setpoint);
-	currentSetpoint = setpoint;
+	if (!grabbingTote) {
+		lifterMotor->Set(setpoint);
+		currentSetpoint = setpoint;
+	}
 }
 
 Lifter::~Lifter() {
