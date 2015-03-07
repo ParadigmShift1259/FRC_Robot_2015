@@ -10,22 +10,22 @@
 /**
  * constructor that takes in 4 encoders for the mecanum drive train
  */
-DriveEncoders::DriveEncoders(Encoder* frontLeftEncoder,
-		Encoder* rearLeftEncoder, Encoder* frontRightEncoder,
-		Encoder* rearRightEncoder) {
-	this->frontLeftEncoder = frontLeftEncoder;
-	this->rearLeftEncoder = frontLeftEncoder;
-	this->frontRightEncoder = frontRightEncoder;
-	this->rearRightEncoder = rearRightEncoder;
+DriveEncoders::DriveEncoders(CANTalon* frontRightTalon,
+		CANTalon* backRightTalon, CANTalon* frontLeftTalon,
+		CANTalon* backLeftTalon) {
+	this->frontLeftTalon = frontLeftTalon;
+	this->backLeftTalon = frontLeftTalon;
+	this->frontRightTalon = frontRightTalon;
+	this->backRightTalon = backRightTalon;
 }
 
 /**
  * gets the distance traveled forward from the encoders in inches
  */
 double DriveEncoders::GetDistanceStraight() {
-	double forwardDistance = (frontLeftEncoder->GetDistance()
-					+ rearLeftEncoder->GetDistance() - frontRightEncoder->GetDistance()
-					- rearRightEncoder->GetDistance()) / 4;
+	double forwardDistance = (frontLeftTalon->GetEncPosition()
+			+ backLeftTalon->GetEncPosition() - frontRightTalon->GetEncPosition()
+			- backRightTalon->GetEncPosition()) / 4;
 	return forwardDistance;
 }
 
@@ -34,16 +34,16 @@ double DriveEncoders::GetDistanceStraight() {
  */
 
 double DriveEncoders::GetDistanceStrafe() {
-	double sidewaysDistance = (frontLeftEncoder->GetDistance()
-			+ rearLeftEncoder->GetDistance() + frontRightEncoder->GetDistance()
-			+ rearRightEncoder->GetDistance()) / 4;
+	double sidewaysDistance = (frontLeftTalon->GetEncPosition()
+			+ backLeftTalon->GetEncPosition() + frontRightTalon->GetEncPosition()
+			+ backRightTalon->GetEncPosition()) / 4;
 	return sidewaysDistance;
 }
 
 double DriveEncoders::GetRotation() {
-	double rotation = (frontLeftEncoder->GetDistance()
-			+ rearLeftEncoder->GetDistance() - frontRightEncoder->GetDistance()
-			- rearRightEncoder->GetDistance()) / 4;
+	double rotation = (frontLeftTalon->GetEncPosition()
+			+ backLeftTalon->GetEncPosition() - frontRightTalon->GetEncPosition()
+			- backRightTalon->GetEncPosition()) / 4;
 	return rotation;
 }
 
@@ -51,10 +51,10 @@ double DriveEncoders::GetRotation() {
  * resets the encoders to zero
  */
 void DriveEncoders::ResetEncoders() {
-	frontLeftEncoder->Reset();
-	frontRightEncoder->Reset();
-	rearLeftEncoder->Reset();
-	rearRightEncoder->Reset();
+	frontLeftTalon->SetPosition(0);
+	frontRightTalon->SetPosition(0);
+	backLeftTalon->SetPosition(0);
+	backRightTalon->SetPosition(0);
 }
 
 DriveEncoders::~DriveEncoders() {

@@ -15,6 +15,10 @@ private:
 	bool triggerState = false;
 	bool button2LastCalled = false;
 	bool button3LastCalled = false;
+	bool button4LastCalled = false;
+	bool button2State = false;
+	bool button3State = false;
+	bool button4State = false;
 
 	const double shiftPerCycle = .01;
 
@@ -29,9 +33,11 @@ public:
 	double GetTwist();
 	bool GetTrigger();
 	double GetThrottle();
+	double GetRawY();
 	Joystick* GetJoystick() const;
 	bool GetButton2();
 	bool GetButton3();
+	bool GetButton4();
 };
 
 #endif /* SRC_OI_H_ */

@@ -45,14 +45,14 @@ private:
 	DoubleSolenoid* toteGrabber;
 	DoubleSolenoid* toteDeployer;
 	DoubleSolenoid* vacuumDeployer;
-	Vacuum* vacuums;
+	Vacuum** vacuums;
 	VacuumSensors* vacuumSensors;
 	IntakeWheels* intakeWheels;
 
 public:
 	Lifter(double p, double i, double d, CANTalon* lifterMotor,
 			DoubleSolenoid* toteGrabber, DoubleSolenoid* toteDeployer,
-			DoubleSolenoid* vacuumDeployer, Vacuum* vacuum1,
+			DoubleSolenoid* vacuumDeployer, Vacuum** vacuums,
 			VacuumSensors* vacuumSensors, IntakeWheels* intakeWheels,
 			int numberOfVacuums);
 	void MoveTo(double setpoint);

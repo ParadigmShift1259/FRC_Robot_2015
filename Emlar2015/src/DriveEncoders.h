@@ -12,13 +12,14 @@
 
 class DriveEncoders {
 private:
-	Encoder* frontLeftEncoder;
-	Encoder* rearLeftEncoder;
-	Encoder* frontRightEncoder;
-	Encoder* rearRightEncoder;
+	CANTalon* frontLeftTalon;
+	CANTalon* backLeftTalon;
+	CANTalon* frontRightTalon;
+	CANTalon* backRightTalon;
 public:
-	DriveEncoders(Encoder* frontLeftEncoder, Encoder* rearLeftEncoder,
-			Encoder* frontRightEncoder, Encoder* rearRightEncoder);
+	DriveEncoders(CANTalon* frontRightTalon,
+			CANTalon* backRightTalon, CANTalon* frontLeftTalon,
+			CANTalon* backLeftTalon);
 	double GetDistanceStraight();
 	double GetDistanceStrafe();
 	double GetRotation();

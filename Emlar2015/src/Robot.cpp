@@ -19,14 +19,13 @@
 class Robot: public IterativeRobot {
 
 private:
-	const int numberOfVacuums = 1;
+	const int numberOfVacuums = 5;
 	const double pi =
 			3.141592653589793238462643383279502884197169399375105820974944592307816406286;
 
 	//drive encoder information
 	const double drivecpr = 360.0;
-	const double driveGearRatio = 1.0;
-	//final information const double gearRatio = 15.0/40.0;
+	const double driveGearRatio = 15.0 / 40.0;
 	const double driveWheelDiameter = 6.0;
 	const double driveRotationsPerInch = pi * driveWheelDiameter
 			* driveGearRatio;
@@ -35,7 +34,7 @@ private:
 	//lifter encoder information
 	const double liftercpr = 120.0;
 	const double lifterGearRatio = 1.0;
-	const double lifterSprocketDiameter = 1.0;
+	const double lifterSprocketDiameter = 2.406;
 	const double lifterRotationsPerInch = pi * lifterSprocketDiameter
 			* lifterGearRatio;
 	const double lifterInchesPerClick = lifterRotationsPerInch / liftercpr;
@@ -61,27 +60,20 @@ private:
 	const uint32_t backRightPDPChannel = 3;
 
 	//CAN Channels for the drive motors
-	const uint32_t frontLeftChannel = 0;
 	const uint32_t frontRightChannel = 1;
-	const uint32_t backLeftChannel = 2;
-	const uint32_t backRightChannel = 3;
+	const uint32_t backRightChannel = 2;
+	const uint32_t backLeftChannel = 3;
+	const uint32_t frontLeftChannel = 4;
 
 	//PWM Channels for the intake wheels
-	const uint32_t leftIntakeWheelChannel = 4;
-	const uint32_t rightIntakeWheelChannel = 5;
+	const uint32_t intakeWheelChannel = 0;
 
 	//PWM Channels for the vacuums
-	const uint32_t vacuumMotor1Channel = 6;
-
-	//Drive Encoders
-	const uint32_t frontLeftEncoderChannelA = 0;
-	const uint32_t frontLeftEncoderChannelB = 1;
-	const uint32_t frontRightEncoderChannelA = 2;
-	const uint32_t frontRightEncoderChannelB = 3;
-	const uint32_t backLeftEncoderChannelA = 4;
-	const uint32_t backLeftEncoderChannelB = 5;
-	const uint32_t backRightEncoderChannelA = 6;
-	const uint32_t backRightEncoderChannelB = 7;
+	const uint32_t vacuumMotor1Channel = 1;
+	const uint32_t vacuumMotor2Channel = 2;
+	const uint32_t vacuumMotor3Channel = 3;
+	const uint32_t vacuumMotor4Channel = 4;
+	const uint32_t vacuumMotor5Channel = 5;
 
 	//channels for analog sensors
 	const uint32_t gyroChannel = 0;
@@ -90,7 +82,7 @@ private:
 
 	//CAN Channels
 	const uint32_t pcmChannel = 0;
-	const uint32_t lifterCanChannel = 1;
+	const uint32_t lifterCanChannel = 5;
 
 	//piston channels
 	const uint32_t toteGrabberChannelIn = 0;
@@ -151,30 +143,31 @@ private:
 	CANTalon* frontRightWheel;
 	CANTalon* backRightWheel;
 
-	//Drive Encoders
-	Encoder* frontLeftEncoder;
-	Encoder* frontRightEncoder;
-	Encoder* backLeftEncoder;
-	Encoder* backRightEncoder;
-
 	//Pistons
 	DoubleSolenoid* toteGrabber;
 	DoubleSolenoid* toteDeployer;
 	DoubleSolenoid* vacuumDeployer;
 
 	//Intake Wheels
-	Talon* leftIntakeWheel;
-	Talon* rightIntakeWheel;
+	Victor* intakeWheelVictor;
 
 	//Other Outputs
 	Talon* vacuumMotor1;
+	Talon* vacuumMotor2;
+	Talon* vacuumMotor3;
+	Talon* vacuumMotor4;
+	Talon* vacuumMotor5;
 	Compressor* compressor;
 
 	//Controlling Objects
 	IntakeWheels* intakeWheels;
 	VacuumSensors* vacuumSensors;
-	Vacuum* vacuums;
+	Vacuum** vacuums;
 	Vacuum* vacuum1;
+	Vacuum* vacuum2;
+	Vacuum* vacuum3;
+	Vacuum* vacuum4;
+	Vacuum* vacuum5;
 	OI* opIn;
 	MecanumDriveTrain* driveTrain;
 	DriveEncoders* driveEncoders;
@@ -212,20 +205,8 @@ public:
 		printf("drive motors made\n");
 
 		//Intake Wheels
-		leftIntakeWheel = new Talon(leftIntakeWheelChannel);
-		rightIntakeWheel = new Talon(rightIntakeWheelChannel);
+		intakeWheelVictor = new Victor(intakeWheelChannel);
 		printf("intake wheels made\n");
-
-		//Drive Encoder
-		frontLeftEncoder = new Encoder(frontLeftEncoderChannelA,
-				frontLeftEncoderChannelB);
-		frontRightEncoder = new Encoder(frontRightEncoderChannelA,
-				frontRightEncoderChannelB);
-		backLeftEncoder = new Encoder(backLeftEncoderChannelA,
-				backLeftEncoderChannelB);
-		backRightEncoder = new Encoder(backRightEncoderChannelA,
-				backRightEncoderChannelA);
-
 		printf("drive encoders made\n");
 
 		//Solenoids
@@ -245,31 +226,56 @@ public:
 		//other outputs
 		compressor = new Compressor(pcmChannel);
 		vacuumMotor1 = new Talon(vacuumMotor1Channel);
+		vacuumMotor2 = new Talon(vacuumMotor2Channel);
+		vacuumMotor3 = new Talon(vacuumMotor3Channel);
+		vacuumMotor4 = new Talon(vacuumMotor4Channel);
+		vacuumMotor5 = new Talon(vacuumMotor5Channel);
 		printf("other outputs made\n");
 
 		//wpilib class setup
 		compressor->SetClosedLoopControl(true);
-		frontLeftEncoder->SetDistancePerPulse(driveInchesPerClick);
-		backLeftEncoder->SetDistancePerPulse(driveInchesPerClick);
-		frontRightEncoder->SetDistancePerPulse(driveInchesPerClick);
-		backRightEncoder->SetDistancePerPulse(driveInchesPerClick);
+		frontRightWheel->ConfigEncoderCodesPerRev(driveInchesPerClick);
+		backRightWheel->ConfigEncoderCodesPerRev(driveInchesPerClick);
+		frontLeftWheel->ConfigEncoderCodesPerRev(driveInchesPerClick);
+		backLeftWheel->ConfigEncoderCodesPerRev(driveInchesPerClick);
+
+		frontRightWheel->SetFeedbackDevice(CANTalon::QuadEncoder);
+		backRightWheel->SetFeedbackDevice(CANTalon::QuadEncoder);
+		frontLeftWheel->SetFeedbackDevice(CANTalon::QuadEncoder);
+		backLeftWheel->SetFeedbackDevice(CANTalon::QuadEncoder);
+
+		frontRightWheel->ConfigLimitMode(
+				CANTalon::kLimitMode_SrxDisableSwitchInputs);
+		backRightWheel->ConfigLimitMode(
+				CANTalon::kLimitMode_SrxDisableSwitchInputs);
+		frontLeftWheel->ConfigLimitMode(
+				CANTalon::kLimitMode_SrxDisableSwitchInputs);
+		backLeftWheel->ConfigLimitMode(
+				CANTalon::kLimitMode_SrxDisableSwitchInputs);
+
 		lifterMotor->SetFeedbackDevice(CANTalon::QuadEncoder);
-		lifterMotor->ConfigLimitMode(CANTalon::kLimitMode_SwitchInputsOnly);
+		lifterMotor->ConfigLimitMode(
+				CANTalon::kLimitMode_SrxDisableSwitchInputs);
 		lifterMotor->ConfigEncoderCodesPerRev(liftercpr);
 		backLeftWheel->SetControlMode(CANTalon::kSpeed);
 		printf("wpi classes setup done\n");
 
 		//user generated classes
 		printf("Made everything before user generated classes\n");
-		intakeWheels = new IntakeWheels(leftIntakeWheel, rightIntakeWheel);
+		intakeWheels = new IntakeWheels(intakeWheelVictor);
 		vacuum1 = new Vacuum(vacuumMotor1);
+		vacuum2 = new Vacuum(vacuumMotor2);
+		vacuum3 = new Vacuum(vacuumMotor3);
+		vacuum4 = new Vacuum(vacuumMotor4);
+		vacuum5 = new Vacuum(vacuumMotor5);
 		opIn = new OI(stick);
-		driveEncoders = new DriveEncoders(frontLeftEncoder, backLeftEncoder,
-				frontRightEncoder, backRightEncoder);
+		driveEncoders = new DriveEncoders(frontRightWheel, backRightWheel,
+				frontLeftWheel, backLeftWheel);
 		driveTrain = new MecanumDriveTrain(frontLeftWheel, backLeftWheel,
 				frontRightWheel, backRightWheel, opIn, driveEncoders);
 		roboGyro = new CorrectedGyro(gyro, therm);
-		vacuums = {vacuum1};//add the rest of the vaccums here and make sure number of vacuums is large enough
+		vacuums = new Vacuum*[numberOfVacuums] { vacuum1, vacuum2, vacuum3,
+				vacuum4, vacuum5 };	//add the rest of the vaccums here and make sure number of vacuums is large enough
 		lifter = new Lifter(lifterP, lifterI, lifterD, lifterMotor, toteGrabber,
 				toteDeployer, vacuumDeployer, vacuums, vacuumSensors,
 				intakeWheels, numberOfVacuums);
@@ -315,17 +321,15 @@ public:
 		delete frontRightWheel;
 		delete backRightWheel;
 
-		//Drive Encoders
-		delete frontLeftEncoder;
-		delete backLeftEncoder;
-		delete frontRightEncoder;
-		delete backRightEncoder;
-
 		//Lifter Motor
 		delete lifterMotor;
 
 		//outputs
 		delete vacuumMotor1;
+		delete vacuumMotor2;
+		delete vacuumMotor3;
+		delete vacuumMotor4;
+		delete vacuumMotor5;
 		delete compressor;
 
 		//PID Loops
@@ -338,7 +342,12 @@ public:
 		delete roboGyro;
 		delete driveTrain;
 		delete opIn;
+		delete vacuums;
 		delete vacuum1;
+		delete vacuum2;
+		delete vacuum3;
+		delete vacuum4;
+		delete vacuum5;
 		delete lifter;
 		delete vacuumSensors;
 
@@ -350,10 +359,46 @@ public:
 		//roboGyro->Reset();
 		number = 0;
 		count = 0;
+		lifterMotor->DisableSoftPositionLimits();
+		lifterMotor->SetControlMode(CANTalon::kPercentVbus);
+		compressor->SetClosedLoopControl(true);
 	}
 
 	void TestPeriodic() {
 		printf("CH 0 vacuum sensors= %u \n", vacuumSensors->GetCH0());
+		//for (int i = 0; i<numberOfVacuums; i++) {
+		//	vacuums[i]->Start();
+		//}
+		printf("%f\n", lifterMotor->GetOutputVoltage());
+		lifterMotor->Set(opIn->GetRawY());
+		if (opIn->GetButton3()) {
+			lifter->DeployTote();
+		} else {
+			lifter->RetractTote();
+		}
+		if (opIn->GetButton2()) {
+			lifter->DeployVacuum();
+			intakeWheels->EnableWheels();
+			lifter->StartVacuums();
+		} else {
+			lifter->RetractVacuum();
+			intakeWheels->DisableWheels();
+		}
+		if(opIn->GetTrigger()){
+			lifter->StopVacuums();
+			intakeWheels->DisableWheels();
+		}
+		if (opIn->GetButton4()) {
+			lifter->GrabTote();
+		} else {
+			lifter->ReleaseTote();
+		}
+		printf("Button2=%i",opIn->GetButton2());
+		printf("Button3=%i",opIn->GetButton3());
+		printf("Button4=%i",opIn->GetButton4());
+
+
+
 	}
 
 	/*
@@ -363,7 +408,7 @@ public:
 		printf("TeleopInit \n");
 		roboGyro->Reset(); //resets the Gyro
 		gyroPID->SetSetpoint(0.0); //sets the setpoint to zero
-		compressor->SetClosedLoopControl(false);
+		compressor->SetClosedLoopControl(true);
 		strafeDrivePID->SetSetpoint(0.0);
 		straightDrivePID->SetSetpoint(0.0);
 		gyroPID->Enable(); //enables PID
@@ -376,6 +421,7 @@ public:
 	 * human operated mode loop
 	 */
 	void TeleopPeriodic() {
+		compressor->SetClosedLoopControl(true);
 		printf("In Teleop\n");
 		//lifter->AutoGrabTote();
 		//lifter->ContinueDrop();
@@ -564,7 +610,7 @@ public:
 			currentAutoOperation++;
 			break;
 		default:
-		break;
+			break;
 		}
 		lifter->LifterQueuedFunctions();
 	}

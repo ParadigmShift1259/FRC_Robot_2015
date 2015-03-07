@@ -9,7 +9,7 @@
 
 Lifter::Lifter(double p, double i, double d, CANTalon* lifterMotor,
 		DoubleSolenoid* toteGrabber, DoubleSolenoid* toteDeployer,
-		DoubleSolenoid* vacuumDeployer, Vacuum* vacuums,
+		DoubleSolenoid* vacuumDeployer, Vacuum** vacuums,
 		VacuumSensors* vacuumSensors, IntakeWheels* intakeWheels,
 		int numberOfVacuums) {
 	this->lifterMotor = lifterMotor;
@@ -104,10 +104,10 @@ void Lifter::LifterQueuedFunctions() {
 
 }
 void Lifter::DeployVacuum() {
-	vacuumDeployer->Set(vacuumDeployer->kReverse);
+	vacuumDeployer->Set(vacuumDeployer->kForward);
 }
 void Lifter::RetractVacuum() {
-	vacuumDeployer->Set(vacuumDeployer->kForward);
+	vacuumDeployer->Set(vacuumDeployer->kReverse);
 }
 void Lifter::DeployTote() {
 	toteDeployer->Set(toteDeployer->kReverse);
@@ -124,12 +124,12 @@ void Lifter::ReleaseTote() {
 
 void Lifter::StartVacuums() {
 	for (int i = 0; i < numberOfVacuums; i++) {
-		vacuums[i].Start();
+		vacuums[i]->Start();
 	}
 }
 void Lifter::StopVacuums() {
 	for (int i = 0; i < numberOfVacuums; i++) {
-		vacuums[i].Stop();
+		vacuums[i]->Stop();
 	}
 }
 bool Lifter::VacuumsAttached() {

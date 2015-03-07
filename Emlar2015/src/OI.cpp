@@ -37,6 +37,10 @@ double OI::GetX() {
 	}
 	return x;
 }
+double OI::GetRawY() {
+	return mainJoystick->GetY();
+}
+
 double OI::GetY() {
 	double currentY = (mainJoystick->GetY() / OI::GetThrottle());
 	//adds deadzone and ramping
@@ -73,25 +77,26 @@ double OI::GetTwist() {
 }
 
 bool OI::GetButton2() {
-	bool buttonStatus = mainJoystick->GetRawButton(2);
-	if (!button2LastCalled) {
-		button2LastCalled = buttonStatus;
-		return buttonStatus;
-	} else {
-		button2LastCalled = buttonStatus;
-		return false;
+	if (!button2LastCalled && mainJoystick->GetRawButton(2)) {
+		button2State = !button2State;
 	}
+	button2LastCalled = mainJoystick->GetRawButton(2);
+	return button2State;
 }
 
 bool OI::GetButton3() {
-	bool buttonStatus = mainJoystick->GetRawButton(3);
-	if (!button3LastCalled) {
-		button3LastCalled = buttonStatus;
-		return buttonStatus;
-	} else {
-		button3LastCalled = buttonStatus;
-		return false;
+	if (!button3LastCalled && mainJoystick->GetRawButton(3)) {
+		button3State = !button3State;
 	}
+	button3LastCalled = mainJoystick->GetRawButton(3);
+	return button3State;
+}
+bool OI::GetButton4() {
+	if (!button4LastCalled && mainJoystick->GetRawButton(4)) {
+		button4State = !button4State;
+	}
+	button4LastCalled = mainJoystick->GetRawButton(4);
+	return button4State;
 }
 
 bool OI::GetTrigger() {
