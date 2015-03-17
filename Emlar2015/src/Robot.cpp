@@ -24,40 +24,39 @@ private:
 			3.141592653589793238462643383279502884197169399375105820974944592307816406286;
 
 	//drive encoder information
-	const double drivecpr = 360.0;
-	const double driveGearRatio = 15.0 / 40.0;
-	const double driveWheelDiameter = 6.0;
-	const double driveRotationsPerInch = pi * driveWheelDiameter
-			* driveGearRatio;
-	const double driveInchesPerClick = driveRotationsPerInch / drivecpr;
+	double drivecpr = 360.0 * 4.0;
+	double driveGearRatio = 15.0 / 40.0;
+	double driveWheelDiameter = 6.0;
+	double driveRotationsPerInch = pi * driveWheelDiameter * driveGearRatio;
+	double driveInchesPerClick = driveRotationsPerInch / drivecpr;
 
 	//lifter encoder information
-	const double liftercpr = 120.0;
-	const double lifterGearRatio = 1.0;
-	const double lifterSprocketDiameter = 2.406;
-	const double lifterRotationsPerInch = pi * lifterSprocketDiameter
+	double liftercpr = 120.0 * 4.0;
+	double lifterGearRatio = 1.0;
+	double lifterSprocketDiameter = 2.406;
+	double lifterInchesPerRotation = pi * lifterSprocketDiameter
 			* lifterGearRatio;
-	const double lifterInchesPerClick = lifterRotationsPerInch / liftercpr;
+	double lifterInchesPerClick = lifterInchesPerRotation / liftercpr;
 
 	//Strafe and Straight Definitions
 	static const int STRAIGHT = 1;
 	static const int STRAFE = 2;
 
 	//Lifter Position Definitions
-	const int FLOOR = 0.0 / lifterRotationsPerInch; //make sure to change the ones in the lifter class
-	const int TOTE = 12.0 / lifterRotationsPerInch; //make sure to change the ones in the lifter class
-	const int COOPSTEP = 6.25 / lifterRotationsPerInch;
-	const int SCORINGPLATFORM = 2.0 / lifterRotationsPerInch;
+	int FLOOR = 0.0 / lifterInchesPerClick; //make sure to change the ones in the lifter class
+	int TOTE = 12 / lifterInchesPerClick; //make sure to change the ones in the lifter class
+	int COOPSTEP = 6.25 / lifterInchesPerClick;
+	int SCORINGPLATFORM = 2.0 / lifterInchesPerClick;
 
 	//Constants for Robot Properties
 	//static const double distancePerTick		= ;
 	//static const double rectOffset			= ;
 
 	//PDP Channels
-	const uint32_t frontLeftPDPChannel = 2;
+	const uint32_t frontLeftPDPChannel = 15;
 	const uint32_t frontRightPDPChannel = 0;
 	const uint32_t backLeftPDPChannel = 1;
-	const uint32_t backRightPDPChannel = 3;
+	const uint32_t backRightPDPChannel = 0;
 
 	//CAN Channels for the drive motors
 	const uint32_t frontRightChannel = 1;
@@ -81,19 +80,20 @@ private:
 	const uint32_t vacuumSensor1Channel = 2;
 
 	//CAN Channels
-	const uint32_t pcmChannel = 0;
+	const uint32_t pcmChannel = 6;
 	const uint32_t lifterCanChannel = 5;
 
 	//piston channels
-	const uint32_t toteGrabberChannelIn = 0;
-	const uint32_t toteGrabberChannelOut = 1;
-	const uint32_t toteDeployChannelIn = 2;
-	const uint32_t toteDeployChannelOut = 3;
+	const uint32_t toteDeployChannelIn = 0;
+	const uint32_t toteDeployChannelOut = 1;
+	const uint32_t toteGrabberChannelIn = 2;
+	const uint32_t toteGrabberChannelOut = 3;
 	const uint32_t vacuumDeployChannelIn = 4;
 	const uint32_t vacuumDeployChannelOut = 5;
 
 	//channels for other things
-	const uint32_t joystickChannel = 0;
+	const uint32_t driveJoystickChannel = 0;
+	const uint32_t secondaryJoystickChannel = 1;
 
 	//booleans for Autonomous
 	int currentAutoOperation = 0;
@@ -119,9 +119,10 @@ private:
 	double straightI = 0.01;
 	double straightD = 0.0;
 
-	double lifterP = 0.1;
-	double lifterI = 0.0;
-	double lifterD = 0.0;
+	double lifterP = 17.00;
+	double lifterI = 0.005;
+	double lifterD = 0.005;
+	double lifterF = 0.00;
 
 	double number = 0;
 
@@ -132,7 +133,8 @@ private:
 	AnalogInput* gyro;
 	AnalogInput* vacuumSensor1;
 	SPI* vacuumSPIBus;
-	Joystick* stick;			//currently the only joystick
+	Joystick* driveJoystick;			//currently the only joystick
+	Joystick* secondaryJoystick;
 
 	//Lifter Motor
 	CANTalon* lifterMotor;
@@ -190,7 +192,8 @@ public:
 		pdp = new PowerDistributionPanel();
 		therm = new AnalogInput(gyroThermChannel);
 		gyro = new AnalogInput(gyroChannel);
-		stick = new Joystick(joystickChannel);
+		driveJoystick = new Joystick(driveJoystickChannel);
+		secondaryJoystick = new Joystick(secondaryJoystickChannel);
 		accelerometer = new BuiltInAccelerometer();
 		vacuumSensor1 = new AnalogInput(vacuumSensor1Channel);
 		vacuumSPIBus = new SPI(SPI::kMXP);
@@ -210,11 +213,11 @@ public:
 		printf("drive encoders made\n");
 
 		//Solenoids
-		toteGrabber = new DoubleSolenoid(toteGrabberChannelOut,
+		toteGrabber = new DoubleSolenoid(pcmChannel, toteGrabberChannelOut,
 				toteGrabberChannelIn);
-		toteDeployer = new DoubleSolenoid(toteDeployChannelOut,
+		toteDeployer = new DoubleSolenoid(pcmChannel, toteDeployChannelOut,
 				toteDeployChannelIn);
-		vacuumDeployer = new DoubleSolenoid(vacuumDeployChannelOut,
+		vacuumDeployer = new DoubleSolenoid(pcmChannel, vacuumDeployChannelOut,
 				vacuumDeployChannelIn);
 
 		printf("solenoids made\n");
@@ -254,10 +257,19 @@ public:
 				CANTalon::kLimitMode_SrxDisableSwitchInputs);
 
 		lifterMotor->SetFeedbackDevice(CANTalon::QuadEncoder);
-		lifterMotor->ConfigLimitMode(
-				CANTalon::kLimitMode_SrxDisableSwitchInputs);
+		lifterMotor->ConfigLimitMode(CANTalon::kLimitMode_SwitchInputsOnly);
+		lifterMotor->ConfigReverseLimit(0.0);
+		lifterMotor->ConfigForwardLimit(10.0);
 		lifterMotor->ConfigEncoderCodesPerRev(liftercpr);
-		backLeftWheel->SetControlMode(CANTalon::kSpeed);
+		lifterMotor->SetPosition(0.0);
+		lifterMotor->ConfigReverseLimit(-1.0);
+		lifterMotor->SetSensorDirection(true);
+		lifterMotor->SetF(lifterF);
+		frontLeftWheel->SetControlMode(CANTalon::kPercentVbus);
+		backLeftWheel->SetControlMode(CANTalon::kPercentVbus);
+		frontRightWheel->SetControlMode(CANTalon::kPercentVbus);
+		backRightWheel->SetControlMode(CANTalon::kPercentVbus);
+
 		printf("wpi classes setup done\n");
 
 		//user generated classes
@@ -268,7 +280,7 @@ public:
 		vacuum3 = new Vacuum(vacuumMotor3);
 		vacuum4 = new Vacuum(vacuumMotor4);
 		vacuum5 = new Vacuum(vacuumMotor5);
-		opIn = new OI(stick);
+		opIn = new OI(driveJoystick, secondaryJoystick);
 		driveEncoders = new DriveEncoders(frontRightWheel, backRightWheel,
 				frontLeftWheel, backLeftWheel);
 		driveTrain = new MecanumDriveTrain(frontLeftWheel, backLeftWheel,
@@ -276,10 +288,10 @@ public:
 		roboGyro = new CorrectedGyro(gyro, therm);
 		vacuums = new Vacuum*[numberOfVacuums] { vacuum1, vacuum2, vacuum3,
 				vacuum4, vacuum5 };	//add the rest of the vaccums here and make sure number of vacuums is large enough
+		vacuumSensors = new VacuumSensors(vacuumSPIBus);
 		lifter = new Lifter(lifterP, lifterI, lifterD, lifterMotor, toteGrabber,
 				toteDeployer, vacuumDeployer, vacuums, vacuumSensors,
 				intakeWheels, numberOfVacuums);
-		vacuumSensors = new VacuumSensors(vacuumSPIBus);
 
 		printf("user generated classes made\n");
 		//user generated classes setup
@@ -305,7 +317,7 @@ public:
 		//inputs
 		delete therm;
 		delete gyro;
-		delete stick;
+		delete driveJoystick;
 		delete accelerometer;
 		delete vacuumSensor1;
 		delete vacuumSPIBus;
@@ -361,43 +373,55 @@ public:
 		count = 0;
 		lifterMotor->DisableSoftPositionLimits();
 		lifterMotor->SetControlMode(CANTalon::kPercentVbus);
-		compressor->SetClosedLoopControl(true);
+		//compressor->SetClosedLoopControl(true);
 	}
 
 	void TestPeriodic() {
-		printf("CH 0 vacuum sensors= %u \n", vacuumSensors->GetCH0());
+		printf("lifter position = %i\n", lifterMotor->GetEncPosition());
+
+		printf("lifter Height = %f\n", lifterMotor->GetPosition());
+		printf("lifter setpoint = %f\n", lifterMotor->GetSetpoint());
+		printf("Lifter upper limit = %i\n",
+				lifterMotor->IsFwdLimitSwitchClosed());
+		printf("Lifter upper limit = %i\n",
+				lifterMotor->IsRevLimitSwitchClosed());
 		//for (int i = 0; i<numberOfVacuums; i++) {
 		//	vacuums[i]->Start();
 		//}
-		printf("%f\n", lifterMotor->GetOutputVoltage());
+		compressor->SetClosedLoopControl(true);
+		//printf("%f\n", lifterMotor->GetOutputVoltage());
 		lifterMotor->Set(opIn->GetRawY());
-		if (opIn->GetButton3()) {
+		if (opIn->GetToggleButton3()) {
 			lifter->DeployTote();
 		} else {
 			lifter->RetractTote();
 		}
-		if (opIn->GetButton2()) {
+		if (opIn->GetToggleButton2()) {
 			lifter->DeployVacuum();
 			intakeWheels->EnableWheels();
 			lifter->StartVacuums();
-		} else {
-			lifter->RetractVacuum();
-			intakeWheels->DisableWheels();
 		}
-		if(opIn->GetTrigger()){
+		if (opIn->GetTrigger()) {
 			lifter->StopVacuums();
 			intakeWheels->DisableWheels();
 		}
-		if (opIn->GetButton4()) {
+		if (opIn->GetToggleButton4()) {
 			lifter->GrabTote();
 		} else {
 			lifter->ReleaseTote();
 		}
-		printf("Button2=%i",opIn->GetButton2());
-		printf("Button3=%i",opIn->GetButton3());
-		printf("Button4=%i",opIn->GetButton4());
-
-
+		if (!lifter->Zeroed()) {
+			lifter->Zero();
+		}
+		SmartDashboard::PutBoolean("LowerLimitZeroed",lifterMotor->IsRevLimitSwitchClosed());
+		SmartDashboard::PutBoolean("UpperLimitZeroed",lifterMotor->IsFwdLimitSwitchClosed());
+		//lifter->StartVacuums();
+		//printf("Button2=%i\n",opIn->GetToggleButton2());
+		//printf("Button3=%i\n",opIn->GetToggleButton3());
+		//printf("Button4=%i\n",opIn->GetToggleButton4());
+		//printf("NumberOfVacuumsAttached%i\n",vacuumSensors->IsAttached());
+		SmartDashboard::PutBoolean("SafeToDeployVacuum",
+				lifter->SafeChangeVacuumState());
 
 	}
 
@@ -406,15 +430,21 @@ public:
 	 */
 	void TeleopInit() {
 		printf("TeleopInit \n");
+		//lifter->RetractVacuum();
+		//lifter->RetractTote();
+		//lifter->RetractTote();
 		roboGyro->Reset(); //resets the Gyro
 		gyroPID->SetSetpoint(0.0); //sets the setpoint to zero
 		compressor->SetClosedLoopControl(true);
-		strafeDrivePID->SetSetpoint(0.0);
-		straightDrivePID->SetSetpoint(0.0);
+		//strafeDrivePID->SetSetpoint(0.0);
+		//straightDrivePID->SetSetpoint(0.0);
 		gyroPID->Enable(); //enables PID
 		gyroPID->SetSetpoint(0.0); //sets the setpoint to zero
+		lifterMotor->SetControlMode(CANTalon::kPosition);
+		lifterMotor->EnableControl();
 		//lifter->GrabTote();
 		//lifter->RetractTote();
+		lifterMotor->SetPosition(-1);
 	}
 
 	/*
@@ -425,12 +455,20 @@ public:
 		printf("In Teleop\n");
 		//lifter->AutoGrabTote();
 		//lifter->ContinueDrop();
-		strafeDrivePID->Enable();
-		straightDrivePID->Enable();
+		//strafeDrivePID->Enable();
+		//straightDrivePID->Enable();
+
+		printf("lifter Height = %f\n",
+				lifterMotor->GetPosition() * lifterInchesPerClick);
+		printf("lifter setpoint = %f\n", lifterMotor->GetSetpoint());
+		printf("Lifter upper limit = %i\n",
+				lifterMotor->IsFwdLimitSwitchClosed());
+		printf("Lifter upper limit = %i\n",
+				lifterMotor->IsRevLimitSwitchClosed());
 		if (lifter->Zeroed()) {
 			lifter->LifterQueuedFunctions();
-			if (false) {
-				lifter->MoveTo(COOPSTEP);
+			if (opIn->GetSingularSecondaryButton2()) {
+				lifterMotor->Set(COOPSTEP);
 			}
 			if (false) {
 				lifter->MoveTo(COOPSTEP + TOTE);
@@ -441,7 +479,7 @@ public:
 			if (false) {
 				lifter->MoveTo(COOPSTEP + TOTE + TOTE + TOTE);
 			}
-			if (false) {
+			if (opIn->GetSingularSecondaryButton3()) {
 				lifter->MoveTo(SCORINGPLATFORM);
 			}
 			if (false) {
@@ -453,15 +491,21 @@ public:
 			if (false) {
 				lifter->MoveTo(SCORINGPLATFORM + TOTE + TOTE + TOTE);
 			}
-			if (false) {
+			if (opIn->GetSingularSecondaryButton4()) {
 				lifter->Zero();
+			}
+			if (opIn->GetSingularSecondaryButton5()) {
+				lifter->BeginAutoGrabTote();
 			}
 		} else {
 			lifter->Zero();
 		}
-		if (false) {
+		if (opIn->GetSingularButton6()) {
 			lifter->Drop();
 		}
+		printf("Encoder Position = %i\n", lifterMotor->GetEncPosition());
+		printf("Lifter Setpoint = %f\n", lifterMotor->GetSetpoint());
+
 		if (!driveTrain->GyroPIDDisabled()) {
 			gyroPID->Enable();
 			if (!opIn->GetTrigger()) {
@@ -473,39 +517,39 @@ public:
 			driveTrain->Turn(lastSetpoint + 180.0, roboGyro->GetAngle());
 		}
 		//gyroPID->SetSetpointRelative(opIn->GetTwist());
-		if (opIn->GetButton2()) {
+		if (opIn->GetSingularButton2()) {
 			lastSetpoint = roboGyro->GetAngle();
 			gyroPID->Disable();
 			gyroPID->SetSetpointRelative(180.0);
 			driveTrain->EnableTurn();
 		}
-		if (opIn->GetButton3()) {
-			vacuum1->Start();
-		} else {
-			vacuum1->Stop();
-		}
+		/*
+		 if (opIn->GetButton3()) {
+		 vacuum1->Start();
+		 } else {
+		 vacuum1->Stop();
+		 }
+		 */
 		//put numbers to the smart dashboard for diagnostics
 		//PDP Values from the drive
-		SmartDashboard::PutNumber("FrontLeftMotorPower",
-				pdp->GetCurrent(frontLeftPDPChannel) * pdp->GetVoltage());
-		SmartDashboard::PutNumber("FrontRightMotorPower",
-				pdp->GetCurrent(frontRightPDPChannel) * pdp->GetVoltage());
-		SmartDashboard::PutNumber("BackLeftMotorPower",
-				pdp->GetCurrent(backLeftPDPChannel) * pdp->GetVoltage());
-		SmartDashboard::PutNumber("BackRightMotorPower",
-				pdp->GetCurrent(backRightPDPChannel) * pdp->GetVoltage());
-		//other information
-		SmartDashboard::PutNumber("JoystickY", opIn->GetX());
-		SmartDashboard::PutNumber("JoystickX", opIn->GetY());
-		SmartDashboard::PutNumber("JoystickTwist", opIn->GetTwist());
+		SmartDashboard::PutBoolean("LowerLimitZeroed",lifterMotor->IsRevLimitSwitchClosed());
+		SmartDashboard::PutBoolean("UpperLimitZeroed",lifterMotor->IsFwdLimitSwitchClosed());
+
+		SmartDashboard::PutNumber("CH0", vacuumSensors->GetCH0());
+		SmartDashboard::PutNumber("CH1", vacuumSensors->GetCH1());
+		SmartDashboard::PutNumber("CH2", vacuumSensors->GetCH2());
+		SmartDashboard::PutNumber("CH3", vacuumSensors->GetCH3());
+		SmartDashboard::PutNumber("CH4", vacuumSensors->GetCH4());
+
 		SmartDashboard::PutNumber("GyroAngle", roboGyro->GetAngle());
-		SmartDashboard::PutNumber("JoystickThrottle", opIn->GetThrottle());
 		SmartDashboard::PutBoolean("Compressor Enabled?",
 				compressor->Enabled());
 		SmartDashboard::PutNumber("StraightDistance",
 				driveEncoders->GetDistanceStraight());
 		SmartDashboard::PutNumber("StrafeDistance",
 				driveEncoders->GetDistanceStrafe());
+		SmartDashboard::PutBoolean("SafeToDeployVacuum",
+				lifter->SafeChangeVacuumState());
 	}
 
 	/*
@@ -620,6 +664,7 @@ public:
 	 */
 	void DisabledInit() {
 		compressor->SetClosedLoopControl(false);
+		lifter->Zero();
 		gyroPID->Disable();
 		gyroPID->Reset();
 		straightDrivePID->Disable();
@@ -634,4 +679,4 @@ public:
 	}
 };
 
-START_ROBOT_CLASS(Robot);
+START_ROBOT_CLASS (Robot);

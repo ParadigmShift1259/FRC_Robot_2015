@@ -22,21 +22,26 @@ private:
 	const double pi =
 			3.141592653589793238462643383279502884197169399375105820974944592307816406286;
 
-	const double liftercpr = 120.0;
-	const double lifterGearRatio = 1.0;
-	const double lifterSprocketDiameter = 1.0;
-	const double lifterRotationsPerInch = pi * lifterSprocketDiameter
+	double liftercpr = 120.0 * 4.0;
+	double lifterGearRatio = 1.0;
+	double lifterSprocketDiameter = 2.406;
+	double lifterInchesPerRotation = pi * lifterSprocketDiameter
 			* lifterGearRatio;
-	const double lifterInchesPerClick = lifterRotationsPerInch / liftercpr;
+	double lifterInchesPerClick = lifterInchesPerRotation / liftercpr;
 
-	double toteHeight = 12.0 * lifterRotationsPerInch;	//inches
-	double floorHeight = 0.0 * lifterRotationsPerInch;	//inches
+	double toteHeight = 12.0 * lifterInchesPerRotation;	//inches
+	double floorHeight = 0.0 * lifterInchesPerRotation;	//inches
 	int currentSetpoint = 0;
 	const int vacuumOffCount = 3 * 20;
 	int countSinceLastRetract = vacuumOffCount + 1;
-	double threshold = 0.1 / lifterRotationsPerInch;//acceptable tolerance in inches
-	static const int FLOOR = 0.0;
-	static const int TOTE = 12.0;
+	int threshold = 0.125 / lifterInchesPerClick;//acceptable tolerance in inches
+	int FLOOR = 0.0;
+	const int settleOffCount = 1*20;
+	int settleWait = settleOffCount+1;
+	const int grabOffCount = 1*20;
+	int grabWait = grabOffCount;
+
+	int VACUUMCLEARANCE = 15.0 / lifterInchesPerClick;
 	double dropCount = 0;
 	int numberOfVacuums;
 	int clearCount = 0;
@@ -70,7 +75,9 @@ public:
 	void Drop();
 	void LifterQueuedFunctions();
 	void Zero();
+	void Disable();
 	bool Zeroed();
+	bool SafeChangeVacuumState();
 	void StartEmergencyClear();
 	bool VacuumsAttached();
 	bool InPos();

@@ -29,8 +29,8 @@ bool Lifter::GrabbingTote() {
 
 void Lifter::BeginAutoGrabTote() {
 	if (!grabbingTote) {
-		lifterMotor->Set(TOTE);
-		currentSetpoint = TOTE;
+		lifterMotor->Set(VACUUMCLEARANCE);
+		currentSetpoint = VACUUMCLEARANCE;
 		grabbingTote = true;
 	}
 }
@@ -48,66 +48,100 @@ bool Lifter::Zeroed() {
 void Lifter::Zero() {
 	bool lifterLowerLimitClosed = lifterMotor->IsRevLimitSwitchClosed();
 	if (!lifterLowerLimitClosed) {
-		lifterMotor->SetControlMode(lifterMotor->kSpeed);
-		lifterMotor->Set(-0.1);
+		lifterMotor->SetControlMode(lifterMotor->kPercentVbus);
+		lifterMotor->Set(-0.3);
 		zeroed = false;
 	} else {
+		lifterMotor->SetPosition(0.0);
 		lifterMotor->SetControlMode(lifterMotor->kPosition);
 		zeroed = true;
-
 	}
 }
 
 void Lifter::LifterQueuedFunctions() {
 	//tote dropping
-	if (dropping) {
-		dropCount++;
-	}
-	if (dropCount / 20.0 == 2) {
-		ReleaseTote();
-	}
+	/*
+	 if (dropping) {
+	 dropCount++;
+	 }
+	 if (dropCount / 20.0 == 2) {
+	 ReleaseTote();
+	 }
+	 */
 	//tote grabbing
 	if (grabbingTote) {
-		if (currentSetpoint == TOTE && InPos()) {
-			StartVacuums();
-			DeployVacuum();
+		if ((grabWait > grabOffCount) && (settleWait > settleOffCount)
+				&& (countSinceLastRetract > vacuumOffCount)) {
+			if (((vacuumDeployer->Get() == vacuumDeployer->kReverse)
+					|| (vacuumDeployer->Get() == vacuumDeployer->kOff))
+					&& SafeChangeVacuumState()) {
+				printf("deploying vacuum\n");
+				StartVacuums();
+				DeployVacuum();
+				SmartDashboard::PutBoolean("Deploying Vacuum", true);
+			}
+			if (currentSetpoint == FLOOR && InPos()) {
+				printf("grabbedTote\n");
+				GrabTote();
+				settleWait = 0;
+				lifterMotor->Set(VACUUMCLEARANCE);
+				currentSetpoint = VACUUMCLEARANCE;
+				grabbingTote = false;
+			}
+			if ((vacuumDeployer->Get() == vacuumDeployer->kForward)
+					&& VacuumsAttached()) {
+				if (InPos() && currentSetpoint == VACUUMCLEARANCE) {
+					RetractVacuum();
+					countSinceLastRetract = 0;
+				}
+			}
 		}
-		if (currentSetpoint == FLOOR && InPos()) {
+		if ((countSinceLastRetract == vacuumOffCount) && (settleWait > settleOffCount) && (grabWait > grabOffCount)) {
+			printf("releasing tote on other tote\n");
+			StopVacuums();
+			ReleaseTote();
+			lifterMotor->Set(FLOOR);
+			currentSetpoint = FLOOR;
+		}
+		if ((settleWait == settleOffCount) && InPos()
+				&& (countSinceLastRetract > vacuumOffCount) && (grabWait > grabOffCount)) {
 			GrabTote();
-			lifterMotor->Set(TOTE);
-			currentSetpoint = TOTE;
-			grabbingTote = false;
+			grabWait = 0;
 		}
-		if (VacuumsAttached()) {
-			if (vacuumDeployer->Get() != vacuumDeployer->kForward && InPos()
-					&& currentSetpoint == TOTE) {
-				RetractVacuum();
-				countSinceLastRetract = 0;
-			}
-			if (countSinceLastRetract == vacuumOffCount) {
-				StopVacuums();
-				ReleaseTote();
-				lifterMotor->Set(FLOOR);
-				currentSetpoint = FLOOR;
-			}
-			countSinceLastRetract++;
+		if ((grabWait == grabOffCount) && (settleWait > settleOffCount)
+				&& (countSinceLastRetract > vacuumOffCount)) {
+			lifterMotor->Set(VACUUMCLEARANCE);
 		}
+		settleWait++;
+		grabWait++;
+		countSinceLastRetract++;
 	}
 	//emergency clear
-	if(emergencyClearing) {
-		clearCount++;
-	}
-	if(clearCount/20 == 1) {
-		emergencyClearing = false;
-		clearCount = 0;
-	}
+	/*
+	 if(emergencyClearing) {
+	 clearCount++;
+	 }
+	 if(clearCount/20 == 1) {
+	 emergencyClearing = false;
+	 clearCount = 0;
+	 }
+	 */
 
 }
+void Lifter::Disable() {
+	grabbingTote = false;
+	emergencyClearing = false;
+}
+
 void Lifter::DeployVacuum() {
-	vacuumDeployer->Set(vacuumDeployer->kForward);
+	if (SafeChangeVacuumState()) {
+		vacuumDeployer->Set(vacuumDeployer->kForward);
+	}
 }
 void Lifter::RetractVacuum() {
-	vacuumDeployer->Set(vacuumDeployer->kReverse);
+	if (SafeChangeVacuumState()) {
+		vacuumDeployer->Set(vacuumDeployer->kReverse);
+	}
 }
 void Lifter::DeployTote() {
 	toteDeployer->Set(toteDeployer->kReverse);
@@ -123,17 +157,25 @@ void Lifter::ReleaseTote() {
 }
 
 void Lifter::StartVacuums() {
-	for (int i = 0; i < numberOfVacuums; i++) {
-		vacuums[i]->Start();
-	}
+	vacuums[0]->Start();
+	vacuums[1]->Start();
+	vacuums[2]->Start();
+	vacuums[3]->Start();
+	vacuums[4]->Start();
 }
 void Lifter::StopVacuums() {
-	for (int i = 0; i < numberOfVacuums; i++) {
-		vacuums[i]->Stop();
-	}
+	vacuums[0]->Stop();
+	vacuums[1]->Stop();
+	vacuums[2]->Stop();
+	vacuums[3]->Stop();
+	vacuums[4]->Stop();
 }
 bool Lifter::VacuumsAttached() {
 	return vacuumSensors->IsAttached();
+}
+
+bool Lifter::SafeChangeVacuumState() {
+	return ((-lifterMotor->GetEncPosition()) > (VACUUMCLEARANCE - threshold));
 }
 
 bool Lifter::InPos() {
@@ -156,5 +198,5 @@ void Lifter::MoveTo(double setpoint) {
 }
 
 Lifter::~Lifter() {
-	// TODO Auto-generated destructor stub
+// TODO Auto-generated destructor stub
 }

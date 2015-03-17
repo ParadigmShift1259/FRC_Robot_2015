@@ -45,12 +45,12 @@ public:
 		frontRightWheel = frontRight;
 		rearRightWheel = backRight;
 		this->driveEncoders = driveEncoders;
-		robotDrive = new RobotDrive(frontLeft, frontRight, backLeft, backRight);
+		robotDrive = new RobotDrive(frontRight,backLeft,backRight,frontLeft);
 		robotDrive->SetExpiration(0.1);
 		robotDrive->SetInvertedMotor(RobotDrive::kFrontRightMotor, false);// invert the left side motors
-		robotDrive->SetInvertedMotor(RobotDrive::kFrontLeftMotor, true);
+		robotDrive->SetInvertedMotor(RobotDrive::kFrontLeftMotor, false);
 		robotDrive->SetInvertedMotor(RobotDrive::kRearRightMotor, false);// you may need to change or remove this to match your robot
-		robotDrive->SetInvertedMotor(RobotDrive::kRearLeftMotor, true);
+		robotDrive->SetInvertedMotor(RobotDrive::kRearLeftMotor, false);
 		robotDrive->SetSafetyEnabled(false);
 	}
 	void Drive();

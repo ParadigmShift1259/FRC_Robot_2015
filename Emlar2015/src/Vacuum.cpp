@@ -12,7 +12,7 @@ Vacuum::Vacuum(SpeedController* vacuum) {
 }
 
 void Vacuum::Start() {
-	vacuum->Set(0.42);
+	vacuum->Set(0.39);
 }
 
 void Vacuum::Stop() {

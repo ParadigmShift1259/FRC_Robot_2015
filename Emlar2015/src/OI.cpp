@@ -10,12 +10,13 @@
  *      Author: Programming
  */
 
-OI::OI(Joystick* mainJoystick) {
-	this->mainJoystick = mainJoystick;
+OI::OI(Joystick* mainJoystick, Joystick* secondaryJoystick) {
+	this->driveJoystick = mainJoystick;
+	this->secondaryJoystick = secondaryJoystick;
 
 }
 double OI::GetX() {
-	double currentX = (mainJoystick->GetX() / OI::GetThrottle());
+	double currentX = (driveJoystick->GetX() / OI::GetThrottle());
 	//adds deadzone and ramping
 	if (currentX > deadzone || currentX < -deadzone) {
 		if (std::abs(currentX - x) < shiftPerCycle) {
@@ -38,11 +39,14 @@ double OI::GetX() {
 	return x;
 }
 double OI::GetRawY() {
-	return mainJoystick->GetY();
+	return driveJoystick->GetY();
+}
+double OI::GetSecondaryRawY() {
+	return secondaryJoystick->GetY();
 }
 
 double OI::GetY() {
-	double currentY = (mainJoystick->GetY() / OI::GetThrottle());
+	double currentY = (driveJoystick->GetY() / OI::GetThrottle());
 	//adds deadzone and ramping
 	if (currentY > deadzone || currentY < -deadzone) {
 		if (std::abs(currentY - y) < shiftPerCycle) {
@@ -66,7 +70,7 @@ double OI::GetY() {
 }
 
 double OI::GetTwist() {
-	double currentTwist = (mainJoystick->GetTwist() / OI::GetThrottle());
+	double currentTwist = (driveJoystick->GetTwist() / OI::GetThrottle());
 	//adds deadzone
 	if (currentTwist > twistDeadzone || currentTwist < -twistDeadzone) {
 		twist = currentTwist;
@@ -76,41 +80,101 @@ double OI::GetTwist() {
 	return twist;
 }
 
-bool OI::GetButton2() {
-	if (!button2LastCalled && mainJoystick->GetRawButton(2)) {
+bool OI::GetToggleButton2() {
+	if (!button2LastCalled && driveJoystick->GetRawButton(2)) {
 		button2State = !button2State;
 	}
-	button2LastCalled = mainJoystick->GetRawButton(2);
+	button2LastCalled = driveJoystick->GetRawButton(2);
 	return button2State;
 }
 
-bool OI::GetButton3() {
-	if (!button3LastCalled && mainJoystick->GetRawButton(3)) {
-		button3State = !button3State;
-	}
-	button3LastCalled = mainJoystick->GetRawButton(3);
-	return button3State;
+bool OI::GetRawButton2() {
+	return driveJoystick->GetRawButton(2);
 }
-bool OI::GetButton4() {
-	if (!button4LastCalled && mainJoystick->GetRawButton(4)) {
-		button4State = !button4State;
-	}
-	button4LastCalled = mainJoystick->GetRawButton(4);
-	return button4State;
+bool OI::GetRawButton3() {
+	return driveJoystick->GetRawButton(2);
+}
+bool OI::GetRawButton4() {
+	return driveJoystick->GetRawButton(2);
 }
 
-bool OI::GetTrigger() {
-	if (!lastTriggered && mainJoystick->GetTrigger()) {
-		triggerState = !triggerState;
+bool OI::GetToggleButton3() {
+	if (!button3LastCalled && driveJoystick->GetRawButton(3)) {
+		button3State = !button3State;
 	}
-	lastTriggered = mainJoystick->GetTrigger();
-	return triggerState;
+	button3LastCalled = driveJoystick->GetRawButton(3);
+	return button3State;
+}
+bool OI::GetToggleButton4() {
+	if (!button4LastCalled && driveJoystick->GetRawButton(4)) {
+		button4State = !button4State;
+	}
+	button4LastCalled = driveJoystick->GetRawButton(4);
+	return button4State;
+}
+bool OI::GetSingularSecondaryButton2() {
+	bool toReturn = (button2SecondaryLastCalled && secondaryJoystick->GetRawButton(2));
+	button2SecondaryLastCalled = secondaryJoystick->GetRawButton(2);
+	return toReturn;
+}
+
+bool OI::GetSingularSecondaryButton3() {
+	bool toReturn = (button3SecondaryLastCalled && secondaryJoystick->GetRawButton(3));
+	button2SecondaryLastCalled = secondaryJoystick->GetRawButton(3);
+	return toReturn;
+}
+bool OI::GetSingularSecondaryButton4() {
+	bool toReturn = (button4SecondaryLastCalled && secondaryJoystick->GetRawButton(4));
+	button4SecondaryLastCalled = secondaryJoystick->GetRawButton(4);
+	return toReturn;
+}
+bool OI::GetSingularSecondaryButton5() {
+	bool toReturn = (button5SecondaryLastCalled && secondaryJoystick->GetRawButton(5));
+	button5SecondaryLastCalled = secondaryJoystick->GetRawButton(5);
+	return toReturn;
+}
+bool OI::GetSingularSecondaryButton6() {
+	bool toReturn = (button6SecondaryLastCalled && secondaryJoystick->GetRawButton(6));
+	button6SecondaryLastCalled = secondaryJoystick->GetRawButton(6);
+	return toReturn;
+}bool OI::GetSingularButton2() {
+	bool toReturn = (button2LastCalled && driveJoystick->GetRawButton(2));
+	button2LastCalled = driveJoystick->GetRawButton(2);
+	return toReturn;
+}
+
+bool OI::GetSingularButton3() {
+	bool toReturn = (button3LastCalled && driveJoystick->GetRawButton(3));
+	button2LastCalled = driveJoystick->GetRawButton(3);
+	return toReturn;
+}
+bool OI::GetSingularButton4() {
+	bool toReturn = (button4LastCalled && driveJoystick->GetRawButton(4));
+	button4LastCalled = driveJoystick->GetRawButton(4);
+	return toReturn;
+}
+bool OI::GetSingularButton5() {
+	bool toReturn = (button5LastCalled && driveJoystick->GetRawButton(5));
+	button5LastCalled = driveJoystick->GetRawButton(5);
+	return toReturn;
+}
+bool OI::GetSingularButton6() {
+	bool toReturn = (button6LastCalled && driveJoystick->GetRawButton(6));
+	button6LastCalled = driveJoystick->GetRawButton(6);
+	return toReturn;
+}
+bool OI::GetTrigger() {
+if (!lastTriggered && driveJoystick->GetTrigger()) {
+	triggerState = !triggerState;
+}
+lastTriggered = driveJoystick->GetTrigger();
+return triggerState;
 }
 
 double OI::GetThrottle() {
-	return mainJoystick->GetThrottle() + 2.00000001;
+return driveJoystick->GetThrottle() + 2.00000001;
 }
 
 Joystick* OI::GetJoystick() const {
-	return mainJoystick;
+return driveJoystick;
 }
