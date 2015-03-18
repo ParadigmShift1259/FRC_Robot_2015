@@ -113,31 +113,43 @@ bool OI::GetToggleButton4() {
 	return button4State;
 }
 bool OI::GetSingularSecondaryButton2() {
-	bool toReturn = (button2SecondaryLastCalled && secondaryJoystick->GetRawButton(2));
+	bool toReturn = (button2SecondaryLastCalled
+			&& secondaryJoystick->GetRawButton(2));
 	button2SecondaryLastCalled = secondaryJoystick->GetRawButton(2);
 	return toReturn;
 }
 
 bool OI::GetSingularSecondaryButton3() {
-	bool toReturn = (button3SecondaryLastCalled && secondaryJoystick->GetRawButton(3));
+	bool toReturn = (button3SecondaryLastCalled
+			&& secondaryJoystick->GetRawButton(3));
 	button2SecondaryLastCalled = secondaryJoystick->GetRawButton(3);
 	return toReturn;
 }
 bool OI::GetSingularSecondaryButton4() {
-	bool toReturn = (button4SecondaryLastCalled && secondaryJoystick->GetRawButton(4));
+	bool toReturn = (button4SecondaryLastCalled
+			&& secondaryJoystick->GetRawButton(4));
 	button4SecondaryLastCalled = secondaryJoystick->GetRawButton(4);
 	return toReturn;
 }
 bool OI::GetSingularSecondaryButton5() {
-	bool toReturn = (button5SecondaryLastCalled && secondaryJoystick->GetRawButton(5));
+	bool toReturn = (button5SecondaryLastCalled
+			&& secondaryJoystick->GetRawButton(5));
 	button5SecondaryLastCalled = secondaryJoystick->GetRawButton(5);
 	return toReturn;
 }
 bool OI::GetSingularSecondaryButton6() {
-	bool toReturn = (button6SecondaryLastCalled && secondaryJoystick->GetRawButton(6));
+	bool toReturn = (button6SecondaryLastCalled
+			&& secondaryJoystick->GetRawButton(6));
 	button6SecondaryLastCalled = secondaryJoystick->GetRawButton(6);
 	return toReturn;
-}bool OI::GetSingularButton2() {
+}
+bool OI::GetSingularSecondaryButton7() {
+	bool toReturn = (button7SecondaryLastCalled
+			&& secondaryJoystick->GetRawButton(7));
+	button6SecondaryLastCalled = secondaryJoystick->GetRawButton(7);
+	return toReturn;
+}
+bool OI::GetSingularButton2() {
 	bool toReturn = (button2LastCalled && driveJoystick->GetRawButton(2));
 	button2LastCalled = driveJoystick->GetRawButton(2);
 	return toReturn;
@@ -164,17 +176,17 @@ bool OI::GetSingularButton6() {
 	return toReturn;
 }
 bool OI::GetTrigger() {
-if (!lastTriggered && driveJoystick->GetTrigger()) {
-	triggerState = !triggerState;
-}
-lastTriggered = driveJoystick->GetTrigger();
-return triggerState;
+	if (!lastTriggered && driveJoystick->GetTrigger()) {
+		triggerState = !triggerState;
+	}
+	lastTriggered = driveJoystick->GetTrigger();
+	return triggerState;
 }
 
 double OI::GetThrottle() {
-return driveJoystick->GetThrottle() + 2.00000001;
+	return driveJoystick->GetThrottle() + 2.00000001;
 }
 
 Joystick* OI::GetJoystick() const {
-return driveJoystick;
+	return driveJoystick;
 }

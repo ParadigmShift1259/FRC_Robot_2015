@@ -18,6 +18,8 @@ private:
 	bool dropping = false;
 	bool emergencyClearing = false;
 	bool zeroed = false;
+	bool lowered = false;
+	bool skipVacuumSensors = false;
 
 	const double pi =
 			3.141592653589793238462643383279502884197169399375105820974944592307816406286;
@@ -29,21 +31,23 @@ private:
 			* lifterGearRatio;
 	double lifterInchesPerClick = lifterInchesPerRotation / liftercpr;
 
-	double toteHeight = 12.0 * lifterInchesPerRotation;	//inches
-	double floorHeight = 0.0 * lifterInchesPerRotation;	//inches
-	int currentSetpoint = 0;
-	const int vacuumOffCount = 3 * 20;
-	int countSinceLastRetract = vacuumOffCount + 1;
-	int threshold = 0.125 / lifterInchesPerClick;//acceptable tolerance in inches
-	int FLOOR = 0.0;
-	const int settleOffCount = 1*20;
-	int settleWait = settleOffCount+1;
-	const int grabOffCount = 1*20;
-	int grabWait = grabOffCount;
-
+	int DROPDISTANCE = 4.0 / lifterInchesPerClick;
 	int VACUUMCLEARANCE = 15.0 / lifterInchesPerClick;
-	double dropCount = 0;
-	int numberOfVacuums;
+	int FLOOR = 0.0;
+	int THRESHOLD = 0.125 / lifterInchesPerClick; //acceptable tolerance in inches
+
+	int VACUUM_RETRACT_TIME = 1 * 50;
+	int GRABBER_RETRACT_TIME = 1 * 50;
+	int ARM_DEPLOY_TIME = 2 * 50;
+	int GRABBER_EXTEND_TIME = 1 * 50;
+	int SETTLE_TIME = 1 * 50;
+
+	int countSinceVacuumRetractTriggered = VACUUM_RETRACT_TIME + 1;
+	int countSinceToteGrabberRetractTriggered = GRABBER_RETRACT_TIME + 1;
+	int countSinceToteGrabberExtendTriggered = GRABBER_EXTEND_TIME + 1;
+	int countSinceSettle = SETTLE_TIME +1;
+
+	int dropCount = 0;
 	int clearCount = 0;
 
 	CANTalon* lifterMotor;
@@ -54,6 +58,7 @@ private:
 	VacuumSensors* vacuumSensors;
 	IntakeWheels* intakeWheels;
 
+	int numberOfVacuums;
 public:
 	Lifter(double p, double i, double d, CANTalon* lifterMotor,
 			DoubleSolenoid* toteGrabber, DoubleSolenoid* toteDeployer,
@@ -70,6 +75,7 @@ public:
 	void GrabTote();
 	void ReleaseTote();
 	void AutoGrabTote();
+	void SkipVacuumSensors();
 	void StartVacuums();
 	void StopVacuums();
 	void Drop();
@@ -82,6 +88,7 @@ public:
 	bool VacuumsAttached();
 	bool InPos();
 	bool GrabbingTote();
+	bool DroppingTote();
 	virtual ~Lifter();
 };
 

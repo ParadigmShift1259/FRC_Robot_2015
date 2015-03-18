@@ -23,6 +23,7 @@ private:
 	bool button4SecondaryLastCalled = false;
 	bool button5SecondaryLastCalled = false;
 	bool button6SecondaryLastCalled = false;
+	bool button7SecondaryLastCalled = false;
 	bool button2State = false;
 	bool button3State = false;
 	bool button4State = false;
@@ -62,6 +63,7 @@ public:
 	bool GetSingularSecondaryButton4();
 	bool GetSingularSecondaryButton5();
 	bool GetSingularSecondaryButton6();
+	bool GetSingularSecondaryButton7();
 };
 
 #endif /* SRC_OI_H_ */

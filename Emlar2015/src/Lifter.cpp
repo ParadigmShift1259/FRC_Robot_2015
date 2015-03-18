@@ -6,6 +6,7 @@
  */
 
 #include <Lifter.h>
+#include <math.h>
 
 Lifter::Lifter(double p, double i, double d, CANTalon* lifterMotor,
 		DoubleSolenoid* toteGrabber, DoubleSolenoid* toteDeployer,
@@ -27,10 +28,13 @@ bool Lifter::GrabbingTote() {
 	return grabbingTote;
 }
 
+bool Lifter::DroppingTote() {
+	return dropping;
+}
+
 void Lifter::BeginAutoGrabTote() {
 	if (!grabbingTote) {
 		lifterMotor->Set(VACUUMCLEARANCE);
-		currentSetpoint = VACUUMCLEARANCE;
 		grabbingTote = true;
 	}
 }
@@ -60,63 +64,77 @@ void Lifter::Zero() {
 
 void Lifter::LifterQueuedFunctions() {
 	//tote dropping
-	/*
-	 if (dropping) {
-	 dropCount++;
-	 }
-	 if (dropCount / 20.0 == 2) {
-	 ReleaseTote();
-	 }
-	 */
+	if (dropping) {
+		dropCount++;
+		if (dropCount > ARM_DEPLOY_TIME && InPos() && lowered) {
+			lowered = false;
+			ReleaseTote();
+			dropping = false;
+		}
+		if (dropCount == ARM_DEPLOY_TIME) {
+			lowered = true;
+			lifterMotor->Set(lifterMotor->GetSetpoint() - DROPDISTANCE);
+		}
+	}
 	//tote grabbing
 	if (grabbingTote) {
-		if ((grabWait > grabOffCount) && (settleWait > settleOffCount)
-				&& (countSinceLastRetract > vacuumOffCount)) {
+		if ((countSinceToteGrabberRetractTriggered > GRABBER_RETRACT_TIME)
+				&& (countSinceVacuumRetractTriggered > VACUUM_RETRACT_TIME)
+				&& (countSinceToteGrabberExtendTriggered > GRABBER_EXTEND_TIME)
+				&& (countSinceSettle > SETTLE_TIME)) {
 			if (((vacuumDeployer->Get() == vacuumDeployer->kReverse)
 					|| (vacuumDeployer->Get() == vacuumDeployer->kOff))
-					&& SafeChangeVacuumState()) {
+					&& SafeChangeVacuumState()
+					&& lifterMotor->GetSetpoint() == VACUUMCLEARANCE
+					&& !VacuumsAttached()) {
 				printf("deploying vacuum\n");
 				StartVacuums();
+				intakeWheels->EnableWheels();
 				DeployVacuum();
 				SmartDashboard::PutBoolean("Deploying Vacuum", true);
 			}
-			if (currentSetpoint == FLOOR && InPos()) {
-				printf("grabbedTote\n");
-				GrabTote();
-				settleWait = 0;
-				lifterMotor->Set(VACUUMCLEARANCE);
-				currentSetpoint = VACUUMCLEARANCE;
-				grabbingTote = false;
-			}
 			if ((vacuumDeployer->Get() == vacuumDeployer->kForward)
-					&& VacuumsAttached()) {
-				if (InPos() && currentSetpoint == VACUUMCLEARANCE) {
-					RetractVacuum();
-					countSinceLastRetract = 0;
-				}
+					&& (VacuumsAttached() || skipVacuumSensors) && InPos()
+					&& (lifterMotor->GetSetpoint() == VACUUMCLEARANCE)) {
+				RetractVacuum();
+				SmartDashboard::PutBoolean("Deploying Vacuum", false);
+				skipVacuumSensors = false;
+				countSinceVacuumRetractTriggered = 0;
+			}
+			if ((lifterMotor->GetSetpoint() == (VACUUMCLEARANCE - DROPDISTANCE))
+					&& InPos()) {
+				ReleaseTote();
+				countSinceToteGrabberExtendTriggered = 0;
+				intakeWheels->DisableWheels();
+			}
+
+			if ((lifterMotor->GetSetpoint() == FLOOR) && InPos()) {
+				countSinceSettle = 0;
 			}
 		}
-		if ((countSinceLastRetract == vacuumOffCount) && (settleWait > settleOffCount) && (grabWait > grabOffCount)) {
+		if (countSinceVacuumRetractTriggered == VACUUM_RETRACT_TIME) {
 			printf("releasing tote on other tote\n");
 			StopVacuums();
-			ReleaseTote();
-			lifterMotor->Set(FLOOR);
-			currentSetpoint = FLOOR;
+			lifterMotor->Set(VACUUMCLEARANCE - DROPDISTANCE);
 		}
-		if ((settleWait == settleOffCount) && InPos()
-				&& (countSinceLastRetract > vacuumOffCount) && (grabWait > grabOffCount)) {
+		if ((countSinceSettle == SETTLE_TIME)) {
 			GrabTote();
-			grabWait = 0;
+			countSinceToteGrabberRetractTriggered = 0;
 		}
-		if ((grabWait == grabOffCount) && (settleWait > settleOffCount)
-				&& (countSinceLastRetract > vacuumOffCount)) {
+		if ((countSinceToteGrabberRetractTriggered == GRABBER_RETRACT_TIME)) {
+			printf("ToteGrabbed\n");
 			lifterMotor->Set(VACUUMCLEARANCE);
+			grabbingTote = false;
 		}
-		settleWait++;
-		grabWait++;
-		countSinceLastRetract++;
+		if (countSinceToteGrabberExtendTriggered == GRABBER_EXTEND_TIME) {
+			lifterMotor->Set(FLOOR);
+		}
+		countSinceToteGrabberRetractTriggered++;
+		countSinceVacuumRetractTriggered++;
+		countSinceToteGrabberExtendTriggered++;
+		countSinceSettle++;
 	}
-	//emergency clear
+//emergency clear
 	/*
 	 if(emergencyClearing) {
 	 clearCount++;
@@ -130,7 +148,13 @@ void Lifter::LifterQueuedFunctions() {
 }
 void Lifter::Disable() {
 	grabbingTote = false;
+	dropping = false;
 	emergencyClearing = false;
+	zeroed = false;
+	lowered = false;
+	countSinceVacuumRetractTriggered = VACUUM_RETRACT_TIME + 1;
+	countSinceToteGrabberRetractTriggered = GRABBER_RETRACT_TIME + 1;
+	StopVacuums();
 }
 
 void Lifter::DeployVacuum() {
@@ -150,10 +174,18 @@ void Lifter::RetractTote() {
 	toteDeployer->Set(toteDeployer->kForward);
 }
 void Lifter::GrabTote() {
-	toteGrabber->Set(toteGrabber->kReverse);
+	if (vacuumDeployer->Get() != vacuumDeployer->kForward) {
+		toteGrabber->Set(toteGrabber->kReverse);
+	}
 }
 void Lifter::ReleaseTote() {
-	toteGrabber->Set(toteGrabber->kForward);
+	if (vacuumDeployer->Get() != vacuumDeployer->kForward) {
+		toteGrabber->Set(toteGrabber->kForward);
+	}
+}
+
+void Lifter::SkipVacuumSensors() {
+	skipVacuumSensors = !skipVacuumSensors;
 }
 
 void Lifter::StartVacuums() {
@@ -175,12 +207,12 @@ bool Lifter::VacuumsAttached() {
 }
 
 bool Lifter::SafeChangeVacuumState() {
-	return ((-lifterMotor->GetEncPosition()) > (VACUUMCLEARANCE - threshold));
+	return ((-lifterMotor->GetEncPosition()) > (VACUUMCLEARANCE - THRESHOLD));
 }
 
 bool Lifter::InPos() {
 	double error = lifterMotor->GetClosedLoopError();
-	return (error < threshold && error > -threshold);
+	return std::abs(error) < THRESHOLD;
 }
 
 void Lifter::StartEmergencyClear() {
@@ -191,9 +223,8 @@ void Lifter::StartEmergencyClear() {
 }
 
 void Lifter::MoveTo(double setpoint) {
-	if (!grabbingTote) {
+	if (!(grabbingTote || dropping)) {
 		lifterMotor->Set(setpoint);
-		currentSetpoint = setpoint;
 	}
 }
 

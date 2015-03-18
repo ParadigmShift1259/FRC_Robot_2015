@@ -20,7 +20,7 @@ bool VacuumSensors::IsAttached() {
 	bool CH4Attach = CH4Attached();
 	int numberAttached =  (int)CH0Attach + (int)CH1Attach + (int)CH2Attach
 			+ (int)CH3Attach + (int)CH4Attach;
-	return numberAttached >= 1;
+	return numberAttached >= 2;
 }
 
 unsigned int VacuumSensors::GetCH0() {
