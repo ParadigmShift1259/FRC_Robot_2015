@@ -19,11 +19,14 @@
 class Robot: public IterativeRobot {
 
 private:
+
+	bool manual = false;
+
 	const int numberOfVacuums = 5;
 	const double pi =
 			3.141592653589793238462643383279502884197169399375105820974944592307816406286;
 
-	//drive encoder information
+	//drive encoder information also change in MECHANUMDRIVETRAIN class
 	double drivecpr = 360.0 * 4.0;
 	double driveGearRatio = 1.0;
 	double driveWheelDiameter = 6.0;
@@ -48,6 +51,7 @@ private:
 	int COOPSTEP = 6.25 / lifterInchesPerClick;
 	int SCORINGPLATFORM = 2.0 / lifterInchesPerClick;
 	int VACUUMCLEARANCE = 14.0 / lifterInchesPerClick;
+	int CLEARANCE = 2.0 / lifterInchesPerClick;
 	//Constants for Robot Properties
 	//static const double distancePerTick		= ;
 	//static const double rectOffset			= ;
@@ -99,6 +103,10 @@ private:
 	int currentAutoOperation = 0;
 	int count = 0;
 
+	//Digital pins for autonomous
+	const uint32_t justDriveChannel = 0;
+	const uint32_t doNothingChannel = 1;
+
 	//Drivetrain temporary Storage
 	double lastSetpoint;
 
@@ -119,14 +127,16 @@ private:
 	double straightI = 0.01;
 	double straightD = 0.0;
 
-	double lifterP = 15.00;
+	double lifterP = 17.00;
 	double lifterI = 0.005;
 	double lifterD = 0.005;
-	double lifterF = 0.00;
+	double lifterF = 1.0;
 
 	double number = 0;
 
 	//inputs
+	DigitalInput* justDrive;
+	DigitalInput* doNothing;
 	PowerDistributionPanel* pdp;
 	Accelerometer* accelerometer;
 	AnalogInput* therm;
@@ -181,14 +191,12 @@ private:
 	EncoderDrivePID* straightDrivePID;
 	EncoderDrivePID* strafeDrivePID;
 
-	uint8_t* dataOut;
-	uint8_t* dataIn;
-
 public:
 
 	void RobotInit() {
 		//inputs
 		printf("Robot init\n");
+		justDrive = new DigitalInput(justDriveChannel);
 		pdp = new PowerDistributionPanel();
 		therm = new AnalogInput(gyroThermChannel);
 		gyro = new AnalogInput(gyroChannel);
@@ -237,10 +245,6 @@ public:
 
 		//wpilib class setup
 		compressor->SetClosedLoopControl(true);
-		frontRightWheel->ConfigEncoderCodesPerRev(driveInchesPerClick);
-		backRightWheel->ConfigEncoderCodesPerRev(driveInchesPerClick);
-		frontLeftWheel->ConfigEncoderCodesPerRev(driveInchesPerClick);
-		backLeftWheel->ConfigEncoderCodesPerRev(driveInchesPerClick);
 
 		frontRightWheel->SetFeedbackDevice(CANTalon::QuadEncoder);
 		backRightWheel->SetFeedbackDevice(CANTalon::QuadEncoder);
@@ -259,7 +263,6 @@ public:
 		lifterMotor->SetFeedbackDevice(CANTalon::QuadEncoder);
 		lifterMotor->ConfigLimitMode(CANTalon::kLimitMode_SwitchInputsOnly);
 		lifterMotor->ConfigReverseLimit(0.0);
-		lifterMotor->ConfigForwardLimit(10.0);
 		lifterMotor->ConfigEncoderCodesPerRev(liftercpr);
 		lifterMotor->SetPosition(0.0);
 		lifterMotor->ConfigReverseLimit(-1.0);
@@ -315,6 +318,8 @@ public:
 
 	~Robot() {
 		//inputs
+		delete justDrive;
+		delete doNothing;
 		delete therm;
 		delete gyro;
 		delete driveJoystick;
@@ -362,22 +367,31 @@ public:
 		delete vacuum5;
 		delete lifter;
 		delete vacuumSensors;
-
-		delete dataIn;
-		delete dataOut;
 	}
 
 	void TestInit() {
+		/*
 		//roboGyro->Reset();
 		number = 0;
 		count = 0;
 		lifterMotor->DisableSoftPositionLimits();
 		lifterMotor->SetControlMode(CANTalon::kPercentVbus);
 		lifter->ReleaseTote();
-		//compressor->SetClosedLoopControl(true);
+		*/
+		compressor->SetClosedLoopControl(true);
+		toteDeployer->Set(DoubleSolenoid::kOff);
+		toteGrabber->Set(DoubleSolenoid::kOff);
+		vacuumDeployer->Set(DoubleSolenoid::kOff);
+
 	}
 
 	void TestPeriodic() {
+		compressor->SetClosedLoopControl(true);
+		toteDeployer->Set(DoubleSolenoid::kOff);
+		toteGrabber->Set(DoubleSolenoid::kOff);
+		vacuumDeployer->Set(DoubleSolenoid::kOff);/*
+		SmartDashboard::PutBoolean("Jumper2", doNothing->Get());
+		compressor->SetClosedLoopControl(true);
 		printf("lifter position = %i\n", lifterMotor->GetEncPosition());
 
 		printf("lifter Height = %f\n", lifterMotor->GetPosition());
@@ -404,7 +418,7 @@ public:
 		} else {
 			lifter->RetractVacuum();
 		}
-		if (opIn->GetTrigger()) {
+		if (opIn->GetToggleTrigger()) {
 			lifter->StopVacuums();
 			intakeWheels->DisableWheels();
 		}
@@ -418,8 +432,10 @@ public:
 		} else {
 			lifterMotor->SetControlMode(CANTalon::kPercentVbus);
 		}
-		SmartDashboard::PutBoolean("LowerLimitZeroed",lifterMotor->IsRevLimitSwitchClosed());
-		SmartDashboard::PutBoolean("UpperLimitZeroed",lifterMotor->IsFwdLimitSwitchClosed());
+		SmartDashboard::PutBoolean("LowerLimitZeroed",
+				lifterMotor->IsRevLimitSwitchClosed());
+		SmartDashboard::PutBoolean("UpperLimitZeroed",
+				lifterMotor->IsFwdLimitSwitchClosed());
 		//lifter->StartVacuums();
 		//printf("Button2=%i\n",opIn->GetToggleButton2());
 		//printf("Button3=%i\n",opIn->GetToggleButton3());
@@ -427,6 +443,7 @@ public:
 		//printf("NumberOfVacuumsAttached%i\n",vacuumSensors->IsAttached());
 		SmartDashboard::PutBoolean("SafeToDeployVacuum",
 				lifter->SafeChangeVacuumState());
+				*/
 
 	}
 
@@ -471,57 +488,113 @@ public:
 				lifterMotor->IsFwdLimitSwitchClosed());
 		printf("Lifter upper limit = %i\n",
 				lifterMotor->IsRevLimitSwitchClosed());
-		if (lifter->Zeroed()) {
-			lifter->LifterQueuedFunctions();
-			if (opIn->GetSingularSecondaryButton2()) {
-				lifterMotor->Set(COOPSTEP);
-			}
-			if (false) {
-				lifter->MoveTo(COOPSTEP + TOTE);
-			}
-			if (false) {
-				lifter->MoveTo(COOPSTEP + TOTE + TOTE);
-			}
-			if (false) {
-				lifter->MoveTo(COOPSTEP + TOTE + TOTE + TOTE);
-			}
-			if (opIn->GetSingularSecondaryButton3()) {
-				lifter->MoveTo(SCORINGPLATFORM);
-			}
-			if (false) {
-				lifter->MoveTo(SCORINGPLATFORM + TOTE);
-			}
-			if (false) {
-				lifter->MoveTo(SCORINGPLATFORM + TOTE + TOTE);
-			}
-			if (false) {
-				lifter->MoveTo(SCORINGPLATFORM + TOTE + TOTE + TOTE);
-			}
-			if (opIn->GetSingularSecondaryButton4()) {
+		if (!manual) {
+			if (lifter->Zeroed()) {
+				lifter->LifterQueuedFunctions();
+				lifterMotor->SetControlMode(CANTalon::kPosition);
+				if (opIn->GetSingularSecondaryButton4()) {
+					lifterMotor->Set(COOPSTEP + CLEARANCE);
+					lifter->EndStartPeriod();
+				}
+				if (opIn->GetSingularSecondaryButton8()) {
+					lifter->EndStartPeriod();
+					lifter->MoveTo(COOPSTEP + TOTE + CLEARANCE);
+				}
+				if (opIn->GetSingularSecondaryButton10()) {
+					lifter->EndStartPeriod();
+					lifter->MoveTo(COOPSTEP + TOTE + TOTE + CLEARANCE);
+				}
+				if (opIn->GetSingularSecondaryButton12()) {
+					lifter->EndStartPeriod();
+					lifter->MoveTo(COOPSTEP + TOTE + TOTE + TOTE + CLEARANCE);
+				}
+				if (opIn->GetSingularSecondaryButton3()) {
+					lifter->MoveTo(SCORINGPLATFORM + CLEARANCE);
+					lifter->EndStartPeriod();
+				}
+				if (opIn->GetSingularSecondaryButton7()) {
+					lifter->MoveTo(SCORINGPLATFORM + TOTE + CLEARANCE);
+					lifter->EndStartPeriod();
+				}
+				if (opIn->GetSingularSecondaryButton9()) {
+					lifter->MoveTo(SCORINGPLATFORM + TOTE + TOTE + CLEARANCE);
+					lifter->EndStartPeriod();
+				}
+				if (opIn->GetSingularSecondaryButton11()) {
+					lifter->MoveTo(
+							SCORINGPLATFORM + TOTE + TOTE + TOTE + CLEARANCE);
+					lifter->EndStartPeriod();
+				}
+				if (opIn->GetSingularSecondaryButton6()) {
+					lifter->Zero();
+					lifter->EndStartPeriod();
+				}
+				if (opIn->GetSingularSecondaryTrigger()) {
+					lifter->BeginAutoGrabTote();
+					lifter->EndStartPeriod();
+				}
+				if (false) {
+					lifter->SkipVacuumSensors();
+					lifter->EndStartPeriod();
+				}
+				if (!(lifter->GrabbingTote() || lifter->DroppingTote()
+						|| lifter->JustStarted())) {
+					lifter->MoveTo(VACUUMCLEARANCE);
+					lifter->RetractVacuum();
+				}
+				if (opIn->GetSingularSecondaryButton2()) {
+					lifter->Drop();
+				}
+				if (opIn->GetSingularSecondaryButton5()) {
+					lifter->StartEmergencyClear();
+				}
+				if (opIn->GetSingularButton7()) {
+					manual = true;
+				}
+			} else {
 				lifter->Zero();
 			}
-			if (opIn->GetSingularSecondaryButton5()) {
-				lifter->BeginAutoGrabTote();
+		} else {
+			lifterMotor->Set(opIn->GetSecondaryRawY());
+			if (opIn->GetSecondaryToggleButton3()) {
+				lifter->DeployTote();
+			} else {
+				lifter->RetractTote();
 			}
-			if (opIn->GetSingularSecondaryButton7()){
-				lifter->SkipVacuumSensors();
+			if (opIn->GetSingularButton7()) {
+				manual = false;
 			}
-			if (!(lifter->GrabbingTote() || lifter->DroppingTote())) {
-				lifter->MoveTo(VACUUMCLEARANCE);
+			if (opIn->GetSecondaryToggleButton2()) {
+				lifter->DeployVacuum();
+				intakeWheels->EnableWheels();
+				lifter->StartVacuums();
+			} else {
 				lifter->RetractVacuum();
 			}
-		} else {
-			lifter->Zero();
+			if (opIn->GetSecondaryToggleTrigger()) {
+				lifter->StopVacuums();
+				intakeWheels->DisableWheels();
+			}
+			if (opIn->GetSecondaryToggleButton4()) {
+				lifter->GrabTote();
+			} else {
+				lifter->ReleaseTote();
+			}
+			if (!lifter->Zeroed()) {
+				lifter->Zero();
+			} else {
+				lifterMotor->SetControlMode(CANTalon::kPercentVbus);
+			}
 		}
-		if (opIn->GetSingularButton6()) {
-			lifter->Drop();
-		}
-		printf("Encoder Position = %i\n", lifterMotor->GetEncPosition());
-		printf("Lifter Setpoint = %f\n", lifterMotor->GetSetpoint());
+		SmartDashboard::PutNumber("Encoder Position",
+				(((double) lifterMotor->GetEncPosition()) / lifterInchesPerClick));
+		SmartDashboard::PutNumber("Lifter Setpoint",
+				(((double) lifterMotor->GetSetpoint()) / lifterInchesPerClick));
 
 		if (!driveTrain->GyroPIDDisabled()) {
 			gyroPID->Enable();
-			if (!opIn->GetTrigger()) {
+			//gyroPID->Disable();
+			if (!opIn->GetToggleTrigger()) {
 				gyroPID->SetSetpoint(roboGyro->GetAngle());
 			}
 			driveTrain->Drive();
@@ -545,8 +618,10 @@ public:
 		 */
 		//put numbers to the smart dashboard for diagnostics
 		//PDP Values from the drive
-		SmartDashboard::PutBoolean("LowerLimitZeroed",lifterMotor->IsRevLimitSwitchClosed());
-		SmartDashboard::PutBoolean("UpperLimitZeroed",lifterMotor->IsFwdLimitSwitchClosed());
+		SmartDashboard::PutBoolean("LowerLimitZeroed",
+				lifterMotor->IsRevLimitSwitchClosed());
+		SmartDashboard::PutBoolean("UpperLimitZeroed",
+				lifterMotor->IsFwdLimitSwitchClosed());
 
 		SmartDashboard::PutNumber("CH0", vacuumSensors->GetCH0());
 		SmartDashboard::PutNumber("CH1", vacuumSensors->GetCH1());
@@ -558,10 +633,24 @@ public:
 		SmartDashboard::PutBoolean("Compressor Enabled?",
 				compressor->Enabled());
 		SmartDashboard::PutNumber("StraightDistance",
-				driveEncoders->GetDistanceStraight());
+				((double) driveEncoders->GetDistanceStraight())
+						* driveInchesPerClick);
 		SmartDashboard::PutNumber("StrafeDistance",
-				driveEncoders->GetDistanceStrafe());
-		SmartDashboard::PutBoolean("SafeToDeployVacuum",
+				((double) driveEncoders->GetDistanceStrafe())
+						* driveInchesPerClick);
+		SmartDashboard::PutNumber("FrontRightEncoderDistance",
+				((double) driveEncoders->GetFrontRight())
+						* driveInchesPerClick);
+		SmartDashboard::PutNumber("FrontLeftEncoderDistance",
+				((double) driveEncoders->GetFrontLeft())
+						* driveInchesPerClick);
+		SmartDashboard::PutNumber("BackRightEncoderDistance",
+				((double) driveEncoders->GetBackRight())
+						* driveInchesPerClick);
+		SmartDashboard::PutNumber("BackLeftEncoderDistance",
+				((double) driveEncoders->GetBackLeft())
+						* driveInchesPerClick);
+		SmartDashboard::PutBoolean("Safe to Deploy Vacuum",
 				lifter->SafeChangeVacuumState());
 	}
 
@@ -575,101 +664,122 @@ public:
 		strafeDrivePID->SetSetpoint(0.0);
 		straightDrivePID->SetSetpoint(0.0);
 		count = 0;
-		compressor->Enabled();
+		compressor->SetClosedLoopControl(true);
 	}
 
 	/*
 	 * autonomous mode loop
 	 */
 	void AutonomousPeriodic() {
-		SmartDashboard::PutNumber("GyroValue", gyro->GetValue());
-		SmartDashboard::PutNumber("GyroAngle", roboGyro->GetAngle());
-		gyroPID->Enable();
-		switch (currentAutoOperation) {
-		case 0:
-			lifter->Zero();
-			if (lifter->Zeroed()) {
-				currentAutoOperation++;
-			}
-			break;
-		case 1:
-			driveTrain->Stop();
-			lifter->BeginAutoGrabTote();
-			if (!lifter->GrabbingTote()) {
-				currentAutoOperation++;
-			}
-			break;
-		case 2:
-			gyroPID->SetPIDValues(gyroStraightP, gyroStraightI, gyroStraightD);
-			if (!driveTrain->DriveForward((2.0 * 12.0 + 9.0)/ driveInchesPerClick)) {		//inches
-				currentAutoOperation++;
-			}
-			break;
-		case 3:
-			driveTrain->Stop();
-			if (count == 0) {
+		/*
+		if (!justDrive->Get()) {
+		*/
+			gyroPID->Enable();
+			driveTrain->DriveForward(2 * 12.0 + 0.0);
+			/*
+		} else if (!doNothing->Get()) {
+			gyroPID->Disable();
+			strafeDrivePID->Disable();
+			straightDrivePID->Disable();
+		} else {
+			SmartDashboard::PutNumber("GyroValue", gyro->GetValue());
+			SmartDashboard::PutNumber("GyroAngle", roboGyro->GetAngle());
+			gyroPID->Enable();
+			switch (currentAutoOperation) {
+			case 0:
+				lifter->Zero();
+				if (lifter->Zeroed()) {
+					currentAutoOperation++;
+				}
+				break;
+			case 1:
+				driveTrain->Stop();
 				lifter->BeginAutoGrabTote();
+				if (!lifter->GrabbingTote()) {
+					currentAutoOperation++;
+				}
+				break;
+			case 2:
+				gyroPID->SetPIDValues(gyroStraightP, gyroStraightI,
+						gyroStraightD);
+				if (!driveTrain->DriveForward(
+						(2.0 * 12.0 + 9.0) / driveInchesPerClick)) {	//inches
+					currentAutoOperation++;
+					driveEncoders->ResetEncoders();
+				}
+				break;
+			case 3:
+				driveTrain->Stop();
+				if (count == 0) {
+					lifter->BeginAutoGrabTote();
+					count++;
+				}
+				if (!lifter->GrabbingTote()) {
+					currentAutoOperation++;
+					count = 0;
+				}
+				break;
+			case 4:
+				gyroPID->SetPIDValues(gyroStraightP, gyroStraightI,
+						gyroStraightD);
+				gyroPID->Reset();
+				if (!driveTrain->DriveForward(
+						(2.0 * 12.0 + 9.0) / driveInchesPerClick)) {	//inches
+					currentAutoOperation++;
+					driveEncoders->ResetEncoders();
+				}
+				break;
+			case 5:
+				driveTrain->Stop();
+				if (count == 0) {
+					lifter->BeginAutoGrabTote();
+					count++;
+				}
+				if (!lifter->GrabbingTote()) {
+					currentAutoOperation++;
+					count = 0;
+				}
+				break;
+			case 6:
+				gyroPID->SetPIDValues(gyroStrafeP, gyroStrafeI, gyroStrafeD);
+				gyroPID->Reset();
+				if (!driveTrain->DriveRight(
+						(8.0 * 12.0 + 11.0) / driveInchesPerClick)) {	//inches
+					currentAutoOperation++;
+					driveEncoders->ResetEncoders();
+				}
+				break;
+			case 7:
+				driveTrain->Stop();
 				count++;
-			}
-			if (!lifter->GrabbingTote()) {
+				if ((count / 20.0) == 1.0) {
+					count = 0;
+					currentAutoOperation++;
+				}
+				break;
+			case 8:
+				lifter->MoveTo(FLOOR + (1.0 / lifterInchesPerClick));
+				if (lifter->InPos()) {
+					currentAutoOperation++;
+				}
+				break;
+			case 9:
+				lifter->DeployTote();
+				if ((count / 20.0 == 1.0)) {
+					count = 0;
+					currentAutoOperation++;
+				}
+				break;
+			case 10:
+				lifter->ReleaseTote();
 				currentAutoOperation++;
-				count = 0;
+				break;
+			default:
+				break;
 			}
-			break;
-		case 4:
-			gyroPID->SetPIDValues(gyroStraightP, gyroStraightI, gyroStraightD);
-			gyroPID->Reset();
-			if (!driveTrain->DriveForward((2.0 * 12.0 + 9.0)/ driveInchesPerClick)) {		//inches
-				currentAutoOperation++;
-			}
-			break;
-		case 5:
-			driveTrain->Stop();
-			if (count == 0) {
-				lifter->BeginAutoGrabTote();
-				count++;
-			}
-			if (!lifter->GrabbingTote()) {
-				currentAutoOperation++;
-				count = 0;
-			}
-			break;
-		case 6:
-			gyroPID->SetPIDValues(gyroStrafeP, gyroStrafeI, gyroStrafeD);
-			gyroPID->Reset();
-			if (!driveTrain->DriveRight((8.0 * 12.0 + 11.0)/ driveInchesPerClick)) {		//inches
-				currentAutoOperation++;
-			}
-			break;
-		case 7:
-			driveTrain->Stop();
-			count++;
-			if ((count / 20.0) == 1.0) {
-				count = 0;
-				currentAutoOperation++;
-			}
-			break;
-		case 8:
-			lifter->MoveTo(FLOOR);
-			if (lifter->InPos()) {
-				currentAutoOperation++;
-			}
-			break;
-		case 9:
-			lifter->DeployTote();
-			if ((count / 20.0 == 1.0)) {
-				count = 0;
-				currentAutoOperation++;
-			}
-			break;
-		case 10:
-			lifter->ReleaseTote();
-			currentAutoOperation++;
-			break;
-		default:
-			break;
+			lifter->LifterQueuedFunctions();
 		}
-		lifter->LifterQueuedFunctions();
+		*/
 	}
 
 	/*

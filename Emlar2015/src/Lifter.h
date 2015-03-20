@@ -20,6 +20,7 @@ private:
 	bool zeroed = false;
 	bool lowered = false;
 	bool skipVacuumSensors = false;
+	bool justStarted = false;
 
 	const double pi =
 			3.141592653589793238462643383279502884197169399375105820974944592307816406286;
@@ -36,11 +37,11 @@ private:
 	int FLOOR = 0.0;
 	int THRESHOLD = 0.125 / lifterInchesPerClick; //acceptable tolerance in inches
 
-	int VACUUM_RETRACT_TIME = 1 * 50;
-	int GRABBER_RETRACT_TIME = 1 * 50;
-	int ARM_DEPLOY_TIME = 2 * 50;
-	int GRABBER_EXTEND_TIME = 1 * 50;
-	int SETTLE_TIME = 1 * 50;
+	int VACUUM_RETRACT_TIME = 1 * 20;
+	int GRABBER_RETRACT_TIME = 1 * 20;
+	int ARM_DEPLOY_TIME = 2 * 20;
+	int GRABBER_EXTEND_TIME = 1 * 20;
+	int SETTLE_TIME = 1 * 20;
 
 	int countSinceVacuumRetractTriggered = VACUUM_RETRACT_TIME + 1;
 	int countSinceToteGrabberRetractTriggered = GRABBER_RETRACT_TIME + 1;
@@ -89,6 +90,8 @@ public:
 	bool InPos();
 	bool GrabbingTote();
 	bool DroppingTote();
+	bool JustStarted();
+	void EndStartPeriod();
 	virtual ~Lifter();
 };
 

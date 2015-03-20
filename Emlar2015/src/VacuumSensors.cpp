@@ -9,7 +9,7 @@
 
 VacuumSensors::VacuumSensors(SPI* vacuumSpi) {
 	this->vacuumSpi = vacuumSpi;
-	threshold = 800;
+	threshold = 850;
 }
 
 bool VacuumSensors::IsAttached() {

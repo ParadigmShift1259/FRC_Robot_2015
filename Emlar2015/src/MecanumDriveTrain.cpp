@@ -9,9 +9,9 @@
 
 void MecanumDriveTrain::Drive() {
 	double y = operatorInputs->GetY();
-	double x = operatorInputs->GetX();
-	double twist = -operatorInputs->GetTwist();
-	if (operatorInputs->GetTrigger()) {
+	double x = -operatorInputs->GetX();
+	double twist = operatorInputs->GetTwist();
+	if (operatorInputs->GetToggleTrigger()) {
 		robotDrive->MecanumDrive_Cartesian(y, x, gyroPIDOffset);
 	} else {
 		robotDrive->MecanumDrive_Cartesian(y, x, twist);
@@ -21,31 +21,72 @@ void MecanumDriveTrain::Drive() {
 bool MecanumDriveTrain::DriveForward(double distance) {
 	double distanceDriven = driveEncoders->GetDistanceStraight();
 	double speed = 0;
-	if (distanceDriven > (.5 * (distance))) {
+	if (distanceDriven > distance) {
+		speed = 0;
+		lastSpeed = 0;
+	} else if (distanceDriven > (.5 * (distance))) {
 		speed = lastSpeed + .001;
 	} else {
 		if (lastSpeed != .001 && distanceDriven != distance) {
-			speed = lastSpeed - .001;
+			speed = lastSpeed - .01;
 		}
 	}
 	lastSpeed = speed;
-	robotDrive->MecanumDrive_Cartesian(speed, strafePIDOffset, gyroPIDOffset);
+	robotDrive->MecanumDrive_Cartesian(strafePIDOffset, -speed, gyroPIDOffset);
 	return (distanceDriven == distance);
 }
 
 bool MecanumDriveTrain::DriveRight(double distance) {
-	double distanceDriven = driveEncoders->GetDistanceStrafe();
+	double distanceDriven = driveEncoders->GetDistanceStraight();
 	double speed = 0;
-	if (distanceDriven > (.5 * (distance))) {
-		speed = lastSpeed + .001;
+	if ((distanceDriven - distance) < THRESHOLD) {
+		return true;
+	}
+	if (distanceDriven < (.5 * (distance))) {
+		speed = lastSpeed + .01;
+	} else if (lastSpeed != .01 && distanceDriven < distance) {
+		speed = lastSpeed - .01;
 	} else {
-		if (lastSpeed != .001 && distanceDriven != distance) {
-			speed = lastSpeed - .001;
-		}
+		speed = -.05;
+	}
+	lastSpeed = speed;
+	robotDrive->MecanumDrive_Cartesian(straightPIDOffset, -speed, gyroPIDOffset);
+	return false;
+}
+bool MecanumDriveTrain::DriveBackward(double distance) {
+	double distanceDriven = -driveEncoders->GetDistanceStraight();
+	double speed = 0;
+	if ((distanceDriven - distance) < THRESHOLD) {
+		return true;
+	}
+	if (distanceDriven < (.5 * (distance))) {
+		speed = lastSpeed + .01;
+	} else if (lastSpeed != .01 && distanceDriven < distance) {
+		speed = lastSpeed - .01;
+	} else {
+		speed = -.05;
 	}
 	lastSpeed = speed;
 	robotDrive->MecanumDrive_Cartesian(straightPIDOffset, speed, gyroPIDOffset);
-	return (distanceDriven == distance);
+	return false;
+}
+
+bool MecanumDriveTrain::DriveLeft(double distance) {
+	double distanceDriven = -driveEncoders->GetDistanceStrafe();
+	double speed = 0;
+	if ((distanceDriven - distance) < THRESHOLD) {
+		return true;
+	}
+	if (distanceDriven < (.5 * (distance))) {
+		speed = lastSpeed + .01;
+	} else if (lastSpeed != .01 && distanceDriven < distance) {
+		speed = lastSpeed - .01;
+	} else {
+		speed = -.05;
+	}
+	lastSpeed = speed;
+	robotDrive->MecanumDrive_Cartesian(speed, straightPIDOffset, gyroPIDOffset);
+	return false;
 }
 
 void MecanumDriveTrain::Stop() {

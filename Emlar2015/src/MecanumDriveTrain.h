@@ -12,13 +12,24 @@
 
 class MecanumDriveTrain {
 private:
-	bool gyroPIDDisabled;
+	const double pi =
+			3.141592653589793238462643383279502884197169399375105820974944592307816406286;
+	bool gyroPIDDisabled = false;
 
 	double gyroPIDOffset = 0;
 	double straightPIDOffset = 0;
 	double strafePIDOffset = 0;
 	double deadband = 1.0;
 	double lastSpeed = 0;
+
+
+	double drivecpr = 360.0 * 4.0;
+	double driveGearRatio = 1.0;
+	double driveWheelDiameter = 6.0;
+	double driveRotationsPerInch = pi * driveWheelDiameter * driveGearRatio;
+	double driveInchesPerClick = driveRotationsPerInch / drivecpr;
+
+	double THRESHOLD = 1.0/driveInchesPerClick;
 
 	SpeedController * frontLeftWheel;
 	SpeedController* rearLeftWheel;
@@ -61,6 +72,8 @@ public:
 	void SetAccelOffset(double offset);
 	bool DriveForward(double speed);
 	bool DriveRight(double speed);
+	bool DriveBackward(double speed);
+	bool DriveLeft(double speed);
 	void SetStraightOffset(double offset);
 	void SetStrafeOffset(double offset);
 	void Stop();

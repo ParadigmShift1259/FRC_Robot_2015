@@ -23,9 +23,9 @@ DriveEncoders::DriveEncoders(CANTalon* frontRightTalon,
  * gets the distance traveled forward from the encoders in inches
  */
 double DriveEncoders::GetDistanceStraight() {
-	double forwardDistance = (frontLeftTalon->GetEncPosition()
-			+ backLeftTalon->GetEncPosition() - frontRightTalon->GetEncPosition()
-			- backRightTalon->GetEncPosition()) / 4.0;
+	double forwardDistance = (GetFrontRight()
+			+ GetBackLeft() - GetFrontRight()
+			- GetBackRight()) / 4.0;
 	return forwardDistance;
 }
 
@@ -34,18 +34,34 @@ double DriveEncoders::GetDistanceStraight() {
  */
 
 double DriveEncoders::GetDistanceStrafe() {
-	double sidewaysDistance = (frontLeftTalon->GetEncPosition()
-			+ backLeftTalon->GetEncPosition() + frontRightTalon->GetEncPosition()
-			+ backRightTalon->GetEncPosition()) / 4.0;
+	double sidewaysDistance = (GetFrontLeft()
+			+ GetBackLeft() + GetFrontRight()
+			+ GetBackRight()) / 4.0;
 	return sidewaysDistance;
 }
 
 double DriveEncoders::GetRotation() {
-	double rotation = (frontLeftTalon->GetEncPosition()
-			+ backLeftTalon->GetEncPosition() - frontRightTalon->GetEncPosition()
-			- backRightTalon->GetEncPosition()) / 4.0;
+	double rotation = (GetFrontLeft()
+			+ GetBackLeft() - GetFrontRight()
+			- GetBackRight()) / 4.0;
 	return rotation;
 }
+
+double DriveEncoders::GetFrontLeft() {
+	return frontLeftTalon->GetPosition();
+}
+double DriveEncoders::GetFrontRight() {
+	return -frontRightTalon->GetPosition();
+}
+double DriveEncoders::GetBackLeft() {
+	return backLeftTalon->GetPosition();
+}
+double DriveEncoders::GetBackRight() {
+	return backRightTalon->GetPosition();
+}
+
+
+
 
 /**
  * resets the encoders to zero

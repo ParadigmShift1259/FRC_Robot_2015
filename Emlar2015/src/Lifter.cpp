@@ -49,6 +49,14 @@ bool Lifter::Zeroed() {
 	return zeroed;
 }
 
+bool Lifter::JustStarted() {
+	return justStarted;
+}
+
+void Lifter::EndStartPeriod() {
+	justStarted = false;
+}
+
 void Lifter::Zero() {
 	bool lifterLowerLimitClosed = lifterMotor->IsRevLimitSwitchClosed();
 	if (!lifterLowerLimitClosed) {
@@ -134,16 +142,15 @@ void Lifter::LifterQueuedFunctions() {
 		countSinceToteGrabberExtendTriggered++;
 		countSinceSettle++;
 	}
-//emergency clear
-	/*
-	 if(emergencyClearing) {
-	 clearCount++;
-	 }
-	 if(clearCount/20 == 1) {
-	 emergencyClearing = false;
-	 clearCount = 0;
-	 }
-	 */
+	if (emergencyClearing && InPos()) {
+		clearCount++;
+		dropping = false;
+		grabbingTote = false;
+	}
+	if (clearCount / 50 == 1) {
+		emergencyClearing = false;
+		clearCount = 0;
+	}
 
 }
 void Lifter::Disable() {
@@ -168,10 +175,14 @@ void Lifter::RetractVacuum() {
 	}
 }
 void Lifter::DeployTote() {
-	toteDeployer->Set(toteDeployer->kReverse);
+	if (lifterMotor->GetPosition() > ((VACUUMCLEARANCE - THRESHOLD) / 2)) {
+		toteDeployer->Set(toteDeployer->kReverse);
+	}
 }
 void Lifter::RetractTote() {
-	toteDeployer->Set(toteDeployer->kForward);
+	if (lifterMotor->GetPosition() > ((VACUUMCLEARANCE - THRESHOLD) / 2)) {
+		toteDeployer->Set(toteDeployer->kForward);
+	}
 }
 void Lifter::GrabTote() {
 	if (vacuumDeployer->Get() != vacuumDeployer->kForward) {
@@ -207,7 +218,8 @@ bool Lifter::VacuumsAttached() {
 }
 
 bool Lifter::SafeChangeVacuumState() {
-	return ((-lifterMotor->GetEncPosition()) > (VACUUMCLEARANCE - THRESHOLD));
+	return ((-lifterMotor->GetEncPosition())
+			> ((VACUUMCLEARANCE - THRESHOLD) / 2.0));
 }
 
 bool Lifter::InPos() {
@@ -218,6 +230,8 @@ bool Lifter::InPos() {
 void Lifter::StartEmergencyClear() {
 	emergencyClearing = true;
 	grabbingTote = false;
+	dropping = false;
+	lifterMotor->Set(VACUUMCLEARANCE);
 	StopVacuums();
 	DeployVacuum();
 }

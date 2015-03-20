@@ -23,6 +23,10 @@ public:
 	double GetDistanceStraight();
 	double GetDistanceStrafe();
 	double GetRotation();
+	double GetFrontLeft();
+	double GetFrontRight();
+	double GetBackLeft();
+	double GetBackRight();
 	void ResetEncoders();
 	virtual ~DriveEncoders();
 };
