@@ -46,10 +46,16 @@ private:
 	int countSinceVacuumRetractTriggered = VACUUM_RETRACT_TIME + 1;
 	int countSinceToteGrabberRetractTriggered = GRABBER_RETRACT_TIME + 1;
 	int countSinceToteGrabberExtendTriggered = GRABBER_EXTEND_TIME + 1;
-	int countSinceSettle = SETTLE_TIME +1;
+	int countSinceSettleTriggered = SETTLE_TIME +1;
 
 	int dropCount = 0;
 	int clearCount = 0;
+
+	bool useNotifier = false;
+	Notifier* vacuumRetractNotifier;
+	Notifier* toteGrabberRetractNotifier;
+	Notifier* toteGrabberExtendNotifier;
+	Notifier* settleNotifier;
 
 	CANTalon* lifterMotor;
 	DoubleSolenoid* toteGrabber;
@@ -92,6 +98,14 @@ public:
 	bool DroppingTote();
 	bool JustStarted();
 	void EndStartPeriod();
+	static void VacuumRetractNotifierHandler(void* lifter);
+	static void ToteGrabberRetractNotifierHandler(void* lifter);
+	static void ToteGrabberExtendNotifierHandler(void* lifter);
+	static void SettleNotifierHandler(void* lifter);
+	void TriggerVacuumRetract();
+	void TriggerToteGrabberRetract();
+	void TriggerToteGrabberExtend();
+	void TriggerSettle();
 	virtual ~Lifter();
 };
 

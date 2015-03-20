@@ -22,6 +22,12 @@ Lifter::Lifter(double p, double i, double d, CANTalon* lifterMotor,
 	this->intakeWheels = intakeWheels;
 	this->numberOfVacuums = numberOfVacuums;
 	lifterMotor->SetPID(p, i, d);
+	//Note that the first argument is actualy the function handle, not the return value of the function
+	this->vacuumRetractNotifier = new Notifier(Lifter::VacuumRetractNotifierHandler, this);
+	this->toteGrabberRetractNotifier = new Notifier(Lifter::ToteGrabberRetractNotifierHandler, this);
+	this->toteGrabberExtendNotifier = new Notifier(Lifter::ToteGrabberExtendNotifierHandler, this);
+	this->settleNotifier = new Notifier(Lifter::SettleNotifierHandler, this);
+
 }
 
 bool Lifter::GrabbingTote() {
@@ -89,7 +95,7 @@ void Lifter::LifterQueuedFunctions() {
 		if ((countSinceToteGrabberRetractTriggered > GRABBER_RETRACT_TIME)
 				&& (countSinceVacuumRetractTriggered > VACUUM_RETRACT_TIME)
 				&& (countSinceToteGrabberExtendTriggered > GRABBER_EXTEND_TIME)
-				&& (countSinceSettle > SETTLE_TIME)) {
+				&& (countSinceSettleTriggered > SETTLE_TIME)) {
 			if (((vacuumDeployer->Get() == vacuumDeployer->kReverse)
 					|| (vacuumDeployer->Get() == vacuumDeployer->kOff))
 					&& SafeChangeVacuumState()
@@ -108,39 +114,63 @@ void Lifter::LifterQueuedFunctions() {
 				SmartDashboard::PutBoolean("Deploying Vacuum", false);
 				skipVacuumSensors = false;
 				countSinceVacuumRetractTriggered = 0;
+				if (useNotifier) {
+					vacuumRetractNotifier->StartSingle(VACUUM_RETRACT_TIME/20.0);
+				}
 			}
 			if ((lifterMotor->GetSetpoint() == (VACUUMCLEARANCE - DROPDISTANCE))
 					&& InPos()) {
 				ReleaseTote();
 				countSinceToteGrabberExtendTriggered = 0;
+				if (useNotifier) {
+					toteGrabberExtendNotifier->StartSingle(GRABBER_EXTEND_TIME/20.0);
+				}
 				intakeWheels->DisableWheels();
 			}
 
 			if ((lifterMotor->GetSetpoint() == FLOOR) && InPos()) {
-				countSinceSettle = 0;
+				countSinceSettleTriggered = 0;
+				if (useNotifier) {
+					settleNotifier->StartSingle(SETTLE_TIME/20.0);
+				}
 			}
 		}
 		if (countSinceVacuumRetractTriggered == VACUUM_RETRACT_TIME) {
 			printf("releasing tote on other tote\n");
 			StopVacuums();
 			lifterMotor->Set(VACUUMCLEARANCE - DROPDISTANCE);
+			if (useNotifier) {
+				countSinceVacuumRetractTriggered++;
+			}
 		}
-		if ((countSinceSettle == SETTLE_TIME)) {
+		if ((countSinceSettleTriggered == SETTLE_TIME)) {
 			GrabTote();
 			countSinceToteGrabberRetractTriggered = 0;
+			if (useNotifier) {
+				toteGrabberRetractNotifier->StartSingle(GRABBER_RETRACT_TIME/20.0);
+				countSinceSettleTriggered++;
+			}
 		}
 		if ((countSinceToteGrabberRetractTriggered == GRABBER_RETRACT_TIME)) {
 			printf("ToteGrabbed\n");
 			lifterMotor->Set(VACUUMCLEARANCE);
 			grabbingTote = false;
+			if (useNotifier) {
+				countSinceToteGrabberRetractTriggered++;
+			}
 		}
 		if (countSinceToteGrabberExtendTriggered == GRABBER_EXTEND_TIME) {
 			lifterMotor->Set(FLOOR);
+			if(useNotifier) {
+				countSinceToteGrabberExtendTriggered++;
+			}
 		}
-		countSinceToteGrabberRetractTriggered++;
-		countSinceVacuumRetractTriggered++;
-		countSinceToteGrabberExtendTriggered++;
-		countSinceSettle++;
+		if (!useNotifier) {
+			countSinceToteGrabberRetractTriggered++;
+			countSinceVacuumRetractTriggered++;
+			countSinceToteGrabberExtendTriggered++;
+			countSinceSettleTriggered++;
+		}
 	}
 	if (emergencyClearing && InPos()) {
 		clearCount++;
@@ -160,7 +190,9 @@ void Lifter::Disable() {
 	zeroed = false;
 	lowered = false;
 	countSinceVacuumRetractTriggered = VACUUM_RETRACT_TIME + 1;
+	vacuumRetractNotifier->Stop();
 	countSinceToteGrabberRetractTriggered = GRABBER_RETRACT_TIME + 1;
+	toteGrabberRetractNotifier->Stop();
 	StopVacuums();
 }
 
@@ -242,6 +274,46 @@ void Lifter::MoveTo(double setpoint) {
 	}
 }
 
+void Lifter::VacuumRetractNotifierHandler(void* lifter) {
+	Lifter* trigger=(Lifter*) lifter;
+	trigger->TriggerVacuumRetract();
+}
+
+void Lifter::ToteGrabberRetractNotifierHandler(void* lifter) {
+	Lifter* trigger=(Lifter*) lifter;
+	trigger->TriggerToteGrabberRetract();
+}
+
+void Lifter::ToteGrabberExtendNotifierHandler(void* lifter) {
+	Lifter* trigger=(Lifter*) lifter;
+	trigger->TriggerToteGrabberExtend();
+}
+
+void Lifter::SettleNotifierHandler(void* lifter) {
+	Lifter* trigger=(Lifter*) lifter;
+	trigger->TriggerSettle();
+}
+
+void Lifter::TriggerVacuumRetract() {
+	countSinceVacuumRetractTriggered = VACUUM_RETRACT_TIME;
+}
+
+void Lifter::TriggerToteGrabberRetract() {
+	countSinceToteGrabberRetractTriggered = GRABBER_RETRACT_TIME;
+}
+
+void Lifter::TriggerToteGrabberExtend() {
+	countSinceToteGrabberExtendTriggered = GRABBER_EXTEND_TIME;
+}
+
+void Lifter::TriggerSettle() {
+	countSinceSettleTriggered = SETTLE_TIME;
+}
+
 Lifter::~Lifter() {
 // TODO Auto-generated destructor stub
+	delete vacuumRetractNotifier;
+	delete toteGrabberRetractNotifier;
+	delete toteGrabberExtendNotifier;
+	delete settleNotifier;
 }
