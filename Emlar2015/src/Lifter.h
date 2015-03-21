@@ -116,7 +116,7 @@ public:
 	void EndStartPeriod();
 
 	int GetDROPDISTANCE() {return DROPDISTANCE;}
-	int GetVACUUMCLEARANCE() {return VACUUMCLEARANCE();}
+	int GetVACUUMCLEARANCE() {return VACUUMCLEARANCE;}
 	int GetFLOOR() {return FLOOR;}
 	int GetCLEARANCE() {return CLEARANCE;}
 	int GetSCORINGPLATFORM() {return SCORINGPLATFORM;}
