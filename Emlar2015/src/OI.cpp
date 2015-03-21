@@ -18,7 +18,8 @@ OI::OI(Joystick* mainJoystick, Joystick* secondaryJoystick) {
 double OI::GetX() {
 	double currentX = (driveJoystick->GetX() / OI::GetThrottle());
 	//adds deadzone and ramping
-	if (currentX > deadzone || currentX < -deadzone) {
+//	if (currentX > deadzone || currentX < -deadzone) {
+	if (std::abs(currentX) > deadzone) {
 		if (std::abs(currentX - x) < shiftPerCycle) {
 			x = currentX;
 		} else if (currentX > x) {
@@ -43,7 +44,8 @@ double OI::GetRawY() {
 }
 double OI::GetSecondaryDeadZonedY() {
 	double y = secondaryJoystick->GetY();
-	if (y < deadzone && y > -deadzone) {
+	//if (y < deadzone && y > -deadzone) {
+	if(std::abs(y) < deadzone) {
 		return 0.0;
 	} else {
 		return y;
@@ -56,7 +58,8 @@ double OI::GetSecondaryRawY() {
 double OI::GetY() {
 	double currentY = (driveJoystick->GetY() / OI::GetThrottle());
 	//adds deadzone and ramping
-	if (currentY > deadzone || currentY < -deadzone) {
+//	if (currentY > deadzone || currentY < -deadzone) {
+	if (std::abs(currentY) > deadzone) {
 		if (std::abs(currentY - y) < shiftPerCycle) {
 			y = currentY;
 		} else if (currentY > y) {
@@ -80,7 +83,8 @@ double OI::GetY() {
 double OI::GetTwist() {
 	double currentTwist = (driveJoystick->GetTwist() / OI::GetThrottle());
 	//adds deadzone
-	if (currentTwist > twistDeadzone || currentTwist < -twistDeadzone) {
+//	if (currentTwist > twistDeadzone || currentTwist < -twistDeadzone) {
+	if (std::abs(currentTwist) > twistDeadzone) {
 		twist = currentTwist;
 	} else {
 		twist = 0;
