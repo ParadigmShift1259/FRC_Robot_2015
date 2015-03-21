@@ -686,7 +686,7 @@ public:
 				((double) driveEncoders->GetDistanceStrafe())
 						* driveInchesPerClick);
 		SmartDashboard::PutBoolean("Safe to Deploy Vacuum",
-				lifter->SafeChangeVacuumState());
+				lifter->SafeToChangeVacuumState());
 		SmartDashboard::PutBoolean("InManual?", manual);
 	}
 

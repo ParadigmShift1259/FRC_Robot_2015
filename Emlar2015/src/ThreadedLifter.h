@@ -12,7 +12,7 @@
 #ifndef SRC_LIFTER_H_
 #define SRC_LIFTER_H_
 
-class Lifter {
+class ThreadedLifter {
 private:
 	bool grabbingTote = false;
 	bool dropping = false;
@@ -64,7 +64,7 @@ private:
 
 	int numberOfVacuums;
 public:
-	Lifter(double p, double i, double d, CANTalon* lifterMotor,
+	ThreadedLifter(double p, double i, double d, CANTalon* lifterMotor,
 			DoubleSolenoid* toteGrabber, DoubleSolenoid* toteDeployer,
 			DoubleSolenoid* vacuumDeployer, Vacuum** vacuums,
 			VacuumSensors* vacuumSensors, IntakeWheels* intakeWheels,
@@ -90,7 +90,7 @@ public:
 	bool Zeroed();
 	bool Cleared();
 	bool Clearing();
-	bool SafeToChangeVacuumState();
+	bool SafeChangeVacuumState();
 	void StartEmergencyClear();
 	bool VacuumsAttached();
 	bool InPos();
@@ -98,7 +98,15 @@ public:
 	bool DroppingTote();
 	bool JustStarted();
 	void EndStartPeriod();
-	virtual ~Lifter();
+	static void VacuumRetractNotifierHandler(void* lifter);
+	static void ToteGrabberRetractNotifierHandler(void* lifter);
+	static void ToteGrabberExtendNotifierHandler(void* lifter);
+	static void SettleNotifierHandler(void* lifter);
+	void TriggerVacuumRetract();
+	void TriggerToteGrabberRetract();
+	void TriggerToteGrabberExtend();
+	void TriggerSettle();
+	virtual ~ThreadedLifter();
 };
 
 #endif /* SRC_LIFTER_H_ */

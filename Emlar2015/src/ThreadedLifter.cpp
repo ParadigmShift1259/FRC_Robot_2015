@@ -5,10 +5,10 @@
  *      Author: paradigm
  */
 
-#include <Lifter.h>
+#include <ThreadedLifter.h>
 #include <math.h>
 
-Lifter::Lifter(double p, double i, double d, CANTalon* lifterMotor,
+ThreadedLifter::ThreadedLifter(double p, double i, double d, CANTalon* lifterMotor,
 		DoubleSolenoid* toteGrabber, DoubleSolenoid* toteDeployer,
 		DoubleSolenoid* vacuumDeployer, Vacuum** vacuums,
 		VacuumSensors* vacuumSensors, IntakeWheels* intakeWheels,
@@ -24,51 +24,51 @@ Lifter::Lifter(double p, double i, double d, CANTalon* lifterMotor,
 	lifterMotor->SetPID(p, i, d);
 }
 
-bool Lifter::GrabbingTote() {
+bool ThreadedLifter::GrabbingTote() {
 	return grabbingTote;
 }
 
-bool Lifter::DroppingTote() {
+bool ThreadedLifter::DroppingTote() {
 	return dropping;
 }
 
-void Lifter::BeginAutoGrabTote() {
+void ThreadedLifter::BeginAutoGrabTote() {
 	if (!grabbingTote) {
 		lifterMotor->Set(VACUUMCLEARANCE);
 		grabbingTote = true;
 	}
 }
 
-void Lifter::Drop() {
+void ThreadedLifter::Drop() {
 	DeployTote();
 	dropping = true;
 	dropCount = 0;
 }
 
-bool Lifter::Zeroed() {
+bool ThreadedLifter::Zeroed() {
 	return zeroed;
 }
 
-bool Lifter::Cleared() {
+bool ThreadedLifter::Cleared() {
 	return cleared;
 }
 
-void Lifter::Clear() {
+void ThreadedLifter::Clear() {
 	clearing = true;
 	cleared = false;
 	DeployTote();
 	countSinceArmDeployTriggered = 0;
 }
 
-bool Lifter::JustStarted() {
+bool ThreadedLifter::JustStarted() {
 	return justStarted;
 }
 
-void Lifter::EndStartPeriod() {
+void ThreadedLifter::EndStartPeriod() {
 	justStarted = false;
 }
 
-void Lifter::Zero() {
+void ThreadedLifter::Zero() {
 	bool lifterLowerLimitClosed = lifterMotor->IsRevLimitSwitchClosed();
 	if (!lifterLowerLimitClosed) {
 		lifterMotor->SetControlMode(lifterMotor->kPercentVbus);
@@ -81,7 +81,7 @@ void Lifter::Zero() {
 	}
 }
 
-void Lifter::LifterQueuedFunctions() {
+void ThreadedLifter::LifterQueuedFunctions() {
 	if (clearing) {
 		countSinceArmDeployTriggered++;
 		if(countSinceArmDeployTriggered == ARM_DEPLOY_TIME ) {
@@ -118,7 +118,7 @@ void Lifter::LifterQueuedFunctions() {
 				&& (countSinceSettleTriggered > SETTLE_TIME)) {
 			if (((vacuumDeployer->Get() == vacuumDeployer->kReverse)
 					|| (vacuumDeployer->Get() == vacuumDeployer->kOff))
-					&& SafeToChangeVacuumState()
+					&& SafeChangeVacuumState()
 					&& lifterMotor->GetSetpoint() == VACUUMCLEARANCE
 					&& !VacuumsAttached()) {
 				printf("deploying vacuum\n");
@@ -178,7 +178,7 @@ void Lifter::LifterQueuedFunctions() {
 	}
 
 }
-void Lifter::Disable() {
+void ThreadedLifter::Disable() {
 	grabbingTote = false;
 	dropping = false;
 	emergencyClearing = false;
@@ -189,70 +189,70 @@ void Lifter::Disable() {
 	StopVacuums();
 }
 
-void Lifter::DeployVacuum() {
-	if (SafeToChangeVacuumState()) {
+void ThreadedLifter::DeployVacuum() {
+	if (SafeChangeVacuumState()) {
 		vacuumDeployer->Set(vacuumDeployer->kForward);
 	}
 }
-void Lifter::RetractVacuum() {
-	if (SafeToChangeVacuumState()) {
+void ThreadedLifter::RetractVacuum() {
+	if (SafeChangeVacuumState()) {
 		vacuumDeployer->Set(vacuumDeployer->kReverse);
 	}
 }
 
-bool Lifter::Clearing() {
+bool ThreadedLifter::Clearing() {
 	return clearing;
 }
-void Lifter::DeployTote() {
+void ThreadedLifter::DeployTote() {
 	if ((lifterMotor->GetPosition() > ((VACUUMCLEARANCE - THRESHOLD) / 4))||!cleared) {
 		toteDeployer->Set(toteDeployer->kReverse);
 	}
 }
-void Lifter::RetractTote() {
+void ThreadedLifter::RetractTote() {
 	if ((lifterMotor->GetPosition() > ((VACUUMCLEARANCE - THRESHOLD) / 4))||!cleared) {
 		toteDeployer->Set(toteDeployer->kForward);
 	}
 }
-void Lifter::GrabTote() {
+void ThreadedLifter::GrabTote() {
 	if (vacuumDeployer->Get() != vacuumDeployer->kForward) {
 		toteGrabber->Set(toteGrabber->kReverse);
 	}
 }
-void Lifter::ReleaseTote() {
+void ThreadedLifter::ReleaseTote() {
 	if (vacuumDeployer->Get() != vacuumDeployer->kForward) {
 		toteGrabber->Set(toteGrabber->kForward);
 	}
 }
 
-void Lifter::SkipVacuumSensors() {
+void ThreadedLifter::SkipVacuumSensors() {
 	skipVacuumSensors = !skipVacuumSensors;
 }
 
-void Lifter::StartVacuums() {
+void ThreadedLifter::StartVacuums() {
 	for (int i = 0; i < numberOfVacuums; i++) {
 		vacuums[i]->Start();
 	}
 }
-void Lifter::StopVacuums() {
+void ThreadedLifter::StopVacuums() {
 	for (int i = 0; i < numberOfVacuums; i++) {
 		vacuums[i]->Stop();
 	}
 }
-bool Lifter::VacuumsAttached() {
+bool ThreadedLifter::VacuumsAttached() {
 	return vacuumSensors->IsAttached();
 }
 
-bool Lifter::SafeToChangeVacuumState() {
+bool ThreadedLifter::SafeChangeVacuumState() {
 	return ((-lifterMotor->GetEncPosition())
 			> ((VACUUMCLEARANCE - THRESHOLD) / 2.0));
 }
 
-bool Lifter::InPos() {
+bool ThreadedLifter::InPos() {
 	double error = lifterMotor->GetClosedLoopError();
 	return std::abs(error) < THRESHOLD;
 }
 
-void Lifter::StartEmergencyClear() {
+void ThreadedLifter::StartEmergencyClear() {
 	emergencyClearing = true;
 	grabbingTote = false;
 	dropping = false;
@@ -261,12 +261,12 @@ void Lifter::StartEmergencyClear() {
 	DeployVacuum();
 }
 
-void Lifter::MoveTo(double setpoint) {
+void ThreadedLifter::MoveTo(double setpoint) {
 	if (!(grabbingTote || dropping)) {
 		lifterMotor->Set(setpoint);
 	}
 }
 
-Lifter::~Lifter() {
+ThreadedLifter::~ThreadedLifter() {
 // TODO Auto-generated destructor stub
 }
