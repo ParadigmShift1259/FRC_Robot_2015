@@ -23,6 +23,7 @@ private:
 	bool manual = true;
 	bool manualPIDLastOn = false;
 	bool smartDashUpdate = true;
+	bool positionOnlyMode = false;
 
 	const int numberOfVacuums = 5;
 	const double pi =
@@ -492,10 +493,17 @@ public:
 					lifterMotor->ClearIaccum();
 					lifterMotor->SetControlMode(CANTalon::kPosition);
 					lifterMotor->Set(lifterMotor->GetPosition());
+					lifterMotor->ClearIaccum();
 					manualPIDLastOn = true;
 				} else if (secondaryY != 0) {
-					lifterMotor->SetControlMode(CANTalon::kPercentVbus);
-					lifterMotor->Set(secondaryY);
+					if(positionOnlyMode) {
+						//lifterMotor->SetControlMode(CANTalon::kPercentVbus);
+						lifterMotor->SetControlMode(CANTalon::kPosition);
+						lifterMotor->Set(lifterMotor->GetPosition()-secondaryY);
+					} else {
+						lifterMotor->SetControlMode(CANTalon::kPercentVbus);
+						lifterMotor->Set(secondaryY);
+					}
 					manualPIDLastOn = false;
 				}
 				if(opIn->GetSingularSecondaryTrigger()) {
@@ -504,6 +512,9 @@ public:
 					lifterD = SmartDashboard::GetNumber("Lifter D");
 					lifterMotor->SetPID(lifterP, lifterI, lifterD);
 					smartDashUpdate = true;
+				}
+				if(opIn->GetSingularSecondaryButton2()) {
+					positionOnlyMode = !positionOnlyMode;
 				}
 			}
 		}
