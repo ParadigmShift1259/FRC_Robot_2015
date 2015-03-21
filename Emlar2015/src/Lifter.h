@@ -54,12 +54,6 @@ private:
 	int dropCount = 0;
 	int emerClearCount = 0;
 
-	bool useNotifier = false;
-	Notifier* vacuumRetractNotifier;
-	Notifier* toteGrabberRetractNotifier;
-	Notifier* toteGrabberExtendNotifier;
-	Notifier* settleNotifier;
-
 	CANTalon* lifterMotor;
 	DoubleSolenoid* toteGrabber;
 	DoubleSolenoid* toteDeployer;
