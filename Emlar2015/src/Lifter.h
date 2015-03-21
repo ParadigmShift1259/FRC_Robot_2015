@@ -35,9 +35,14 @@ private:
 	double lifterInchesPerClick = lifterInchesPerRotation / liftercpr;
 
 	int DROPDISTANCE = 4.0 / lifterInchesPerClick;
-	int VACUUMCLEARANCE = 15.0 / lifterInchesPerClick;
+	int VACUUMCLEARANCE = 14.0 / lifterInchesPerClick;
 	int FLOOR = 0.0;
 	int THRESHOLD = 0.125 / lifterInchesPerClick; //acceptable tolerance in inches
+
+	int CLEARANCE = 2.0 / lifterInchesPerClick;
+	int SCORINGPLATFORM = 2.0 / lifterInchesPerClick;
+	int COOPSTEP = 6.25 / lifterInchesPerClick;
+	int TOTE = 12.0 / lifterInchesPerClick; //make sure to change the ones in the lifter class
 
 	int VACUUM_RETRACT_TIME = 1 * 20;
 	int GRABBER_RETRACT_TIME = 1 * 20;
@@ -63,14 +68,18 @@ private:
 	IntakeWheels* intakeWheels;
 
 	int numberOfVacuums;
+protected:
+
 public:
 	Lifter(double p, double i, double d, CANTalon* lifterMotor,
 			DoubleSolenoid* toteGrabber, DoubleSolenoid* toteDeployer,
 			DoubleSolenoid* vacuumDeployer, Vacuum** vacuums,
 			VacuumSensors* vacuumSensors, IntakeWheels* intakeWheels,
 			int numberOfVacuums);
+
 	void MoveTo(double setpoint);
 	void BeginAutoGrabTote();
+
 	void DeployVacuum();
 	void RetractVacuum();
 	void DeployTote();
@@ -78,26 +87,46 @@ public:
 	void ContinueDrop();
 	void GrabTote();
 	void ReleaseTote();
+
 	void AutoGrabTote();
 	void SkipVacuumSensors();
+
 	void StartVacuums();
 	void StopVacuums();
 	void Drop();
+
 	void LifterQueuedFunctions();
 	void Zero();
 	void Disable();
 	void Clear();
+
 	bool Zeroed();
 	bool Cleared();
 	bool Clearing();
 	bool SafeToChangeVacuumState();
+
 	void StartEmergencyClear();
+
 	bool VacuumsAttached();
 	bool InPos();
 	bool GrabbingTote();
 	bool DroppingTote();
 	bool JustStarted();
+
 	void EndStartPeriod();
+
+	int GetDROPDISTANCE() {return DROPDISTANCE;}
+	int GetVACUUMCLEARANCE() {return VACUUMCLEARANCE();}
+	int GetFLOOR() {return FLOOR;}
+	int GetCLEARANCE() {return CLEARANCE;}
+	int GetSCORINGPLATFORM() {return SCORINGPLATFORM;}
+	int GetCOOPSTEP() {return COOPSTEP;}
+	int GetTOTE() {return TOTE;}
+	double GetHeight() {return (lifterMotor->GetPosition() * lifterInchesPerClick);}
+	double GetEncPosition() {return (((double) lifterMotor->GetEncPosition()) / lifterInchesPerClick);}
+	double GetSetpoint() {return (((double) lifterMotor->GetSetpoint()) / lifterInchesPerClick);}
+	double Getliftercpr() {return liftercpr;}
+
 	virtual ~Lifter();
 };
 

@@ -22,40 +22,38 @@ private:
 
 	bool manual = true;
 	bool manualPIDLastOn = false;
+	bool smartDashUpdate = true;
 
 	const int numberOfVacuums = 5;
 	const double pi =
 			3.141592653589793238462643383279502884197169399375105820974944592307816406286;
 
 	//drive encoder information also change in MECHANUMDRIVETRAIN class
-	double drivecpr = 360.0 * 4;
+	/*double drivecpr = 360.0 * 4;
 	double driveGearRatio = 12.75;
 	double driveWheelDiameter = 6.0;
 	double driveRotationsPerInch = pi * driveWheelDiameter * driveGearRatio;
-	double driveInchesPerClick = driveRotationsPerInch / drivecpr;
+	double driveInchesPerClick = driveRotationsPerInch / drivecpr;*/
 
 	//lifter encoder information
-	double liftercpr = 120.0 * 4.0;
+	/*double liftercpr = 120.0 * 4.0;
 	double lifterGearRatio = 1.0;
 	double lifterSprocketDiameter = 2.406;
 	double lifterInchesPerRotation = pi * lifterSprocketDiameter
 			* lifterGearRatio;
-	double lifterInchesPerClick = lifterInchesPerRotation / liftercpr;
+	double lifterInchesPerClick = lifterInchesPerRotation / liftercpr;*/
 
 	//Strafe and Straight Definitions
 	static const int STRAIGHT = 1;
 	static const int STRAFE = 2;
 
 	//Lifter Position Definitions
-	int FLOOR = 0.0 / lifterInchesPerClick; //make sure to change the ones in the lifter class
-	int TOTE = 12.0 / lifterInchesPerClick; //make sure to change the ones in the lifter class
-	int COOPSTEP = 6.25 / lifterInchesPerClick;
-	int SCORINGPLATFORM = 2.0 / lifterInchesPerClick;
-	int VACUUMCLEARANCE = 14.0 / lifterInchesPerClick;
-	int CLEARANCE = 2.0 / lifterInchesPerClick;
-	//Constants for Robot Properties
-	//static const double distancePerTick		= ;
-	//static const double rectOffset			= ;
+	int FLOOR; //Setup in RobotInit defined in the Lifter class
+	int TOTE; //Setup in RobotInit defined in the Lifter class
+	int COOPSTEP; //Setup in RobotInit defined in the Lifter class
+	int SCORINGPLATFORM; //Setup in RobotInit defined in the Lifter class
+	int VACUUMCLEARANCE; //Setup in RobotInit defined in the Lifter class
+	int CLEARANCE; //Setup in RobotInit defined in the Lifter class
 
 	//PDP Channels
 	const uint32_t frontLeftPDPChannel = 15;
@@ -264,7 +262,7 @@ public:
 		lifterMotor->SetFeedbackDevice(CANTalon::QuadEncoder);
 		lifterMotor->ConfigLimitMode(CANTalon::kLimitMode_SwitchInputsOnly);
 		lifterMotor->ConfigReverseLimit(0.0);
-		lifterMotor->ConfigEncoderCodesPerRev(liftercpr);
+		lifterMotor->ConfigEncoderCodesPerRev(lifter->Getliftercpr());
 		lifterMotor->SetPosition(0.0);
 		lifterMotor->ConfigReverseLimit(-1.0);
 		lifterMotor->SetSensorDirection(true);
@@ -314,6 +312,13 @@ public:
 		vacuumSPIBus->SetClockActiveHigh();
 		vacuumSPIBus->SetChipSelectActiveLow();
 		lifterMotor->SetPID(lifterP, lifterI, lifterD);
+
+		CLEARANCE = lifter->GetCLEARANCE();
+		VACUUMCLEARANCE = lifter->GetVACUUMCLEARANCE();
+		SCORINGPLATFORM = lifter->GetSCORINGPLATFORM();
+		COOPSTEP = lifter->GetCOOPSTEP();
+		FLOOR = lifter->GetFLOOR();
+		TOTE = lifter->GetTOTE();
 
 		printf("setup everything\n");
 	}
@@ -464,7 +469,44 @@ public:
 		 SmartDashboard::PutBoolean("SafeToDeployVacuum",
 		 lifter->SafeChangeVacuumState());
 		 */
-
+		if (!lifter->Cleared()) { //First Clear the lifter
+			 if (!lifter->Clearing()) {
+				 lifter->Clear();
+			 } else {
+				 lifter->LifterQueuedFunctions();
+			 }
+		} else {
+			//manual
+			double secondaryY = opIn->GetSecondaryDeadZonedY();
+			if (!lifter->Zeroed()) {
+				lifter->Zero();
+				manualPIDLastOn = false;
+			} else {
+				if(smartDashUpdate) {
+					SmartDashboard::PutNumber("Lifter P", lifterMotor->GetP());
+					SmartDashboard::PutNumber("Lifter I", lifterMotor->GetI());
+					SmartDashboard::PutNumber("Lifter D", lifterMotor->GetD());
+					smartDashUpdate = false;
+				}
+				if (secondaryY == 0 && !manualPIDLastOn) {
+					lifterMotor->ClearIaccum();
+					lifterMotor->SetControlMode(CANTalon::kPosition);
+					lifterMotor->Set(lifterMotor->GetPosition());
+					manualPIDLastOn = true;
+				} else if (secondaryY != 0) {
+					lifterMotor->SetControlMode(CANTalon::kPercentVbus);
+					lifterMotor->Set(secondaryY);
+					manualPIDLastOn = false;
+				}
+				if(opIn->GetSingularSecondaryTrigger()) {
+					lifterP = SmartDashboard::GetNumber("Lifter P");
+					lifterI = SmartDashboard::GetNumber("Lifter I");
+					lifterD = SmartDashboard::GetNumber("Lifter D");
+					lifterMotor->SetPID(lifterP, lifterI, lifterD);
+					smartDashUpdate = true;
+				}
+			}
+		}
 	}
 
 	/*
@@ -502,16 +544,24 @@ public:
 		//straightDrivePID->Enable();
 
 		printf("lifter Height = %f\n",
-				lifterMotor->GetPosition() * lifterInchesPerClick);
+				lifter->GetHeight());
 		printf("lifter setpoint = %f\n", lifterMotor->GetSetpoint());
 		printf("Lifter upper limit = %i\n",
 				lifterMotor->IsFwdLimitSwitchClosed());
 		printf("Lifter upper limit = %i\n",
 				lifterMotor->IsRevLimitSwitchClosed());
-		if (lifter->Cleared()) {
+		if (!lifter->Cleared()) { //First Clear the lifter
+			 if (!lifter->Clearing()) {
+				 lifter->Clear();
+			 } else {
+				 lifter->LifterQueuedFunctions();
+			 }
+		} else { //Lifter has cleared
 			if (!manual) {
-				lifterMotor->SetControlMode(CANTalon::kPosition);
-				if (lifter->Zeroed()) {
+				if (!lifter->Zeroed()) {
+					lifter->Zero();
+				}
+				else { //lifter->Zeroed()
 					lifter->LifterQueuedFunctions();
 					lifterMotor->SetControlMode(CANTalon::kPosition);
 					if (opIn->GetSingularSecondaryButton4()) {
@@ -581,10 +631,8 @@ public:
 					if (opIn->GetSingularButton7()) {
 						manual = true;
 					}
-				} else {
-					lifter->Zero();
 				}
-			} else {
+			} else { //manual
 				double secondaryY = opIn->GetSecondaryDeadZonedY();
 				if (!lifter->Zeroed()) {
 					lifter->Zero();
@@ -632,15 +680,11 @@ public:
 					lifter->ReleaseTote();
 				}
 			}
-		} else if (!lifter->Clearing()) {
-			lifter->Clear();
-		} else {
-			lifter->LifterQueuedFunctions();
 		}
 		SmartDashboard::PutNumber("Encoder Position",
-				(((double) lifterMotor->GetEncPosition()) / lifterInchesPerClick));
+				lifter->GetEncPosition());
 		SmartDashboard::PutNumber("Lifter Setpoint",
-				(((double) lifterMotor->GetSetpoint()) / lifterInchesPerClick));
+				lifter->GetSetpoint());
 
 		if (!driveTrain->GyroPIDDisabled()) {
 			gyroPID->Enable();
@@ -680,11 +724,9 @@ public:
 		SmartDashboard::PutBoolean("Compressor Enabled?",
 				compressor->Enabled());
 		SmartDashboard::PutNumber("StraightDistance",
-				((double) driveEncoders->GetDistanceStraight())
-						* driveInchesPerClick);
+				driveTrain->GetStraightDistance());
 		SmartDashboard::PutNumber("StrafeDistance",
-				((double) driveEncoders->GetDistanceStrafe())
-						* driveInchesPerClick);
+				driveTrain->GetStrafeDistance());
 		SmartDashboard::PutBoolean("Safe to Deploy Vacuum",
 				lifter->SafeToChangeVacuumState());
 		SmartDashboard::PutBoolean("InManual?", manual);
@@ -714,7 +756,7 @@ public:
 		 */
 		//gyroPID->Enable();
 		gyroPID->Disable();
-		driveTrain->DriveForward((7.0 * 12.0 + 6.0) / driveInchesPerClick);
+		driveTrain->DriveForward(driveTrain->GetAUTODISTANCE());
 		//lifter->GrabTote();
 		lifter->StartVacuums();
 		//driveTrain->DriveRight(((2.0*12.0) + 3)/driveInchesPerClick);

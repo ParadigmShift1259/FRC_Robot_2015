@@ -24,12 +24,13 @@ private:
 
 
 	double drivecpr = 360.0 * 4.0;
-	double driveGearRatio = 1.0;
+	double driveGearRatio = 12.75;
 	double driveWheelDiameter = 6.0;
 	double driveRotationsPerInch = pi * driveWheelDiameter * driveGearRatio;
 	double driveInchesPerClick = driveRotationsPerInch / drivecpr;
 
 	double THRESHOLD = 1.0/driveInchesPerClick;
+	double AUTODISTANCE = (7.0 * 12.0 + 6.0) / driveInchesPerClick;
 
 	SpeedController * frontLeftWheel;
 	SpeedController* rearLeftWheel;
@@ -77,7 +78,11 @@ public:
 	void SetStraightOffset(double offset);
 	void SetStrafeOffset(double offset);
 	void Stop();
-
+	double GetStraightDistance() {return (((double) driveEncoders->GetDistanceStraight())
+			* driveInchesPerClick);}
+	double GetStrafeDistance() {return (((double) driveEncoders->GetDistanceStrafe())
+			* driveInchesPerClick);}
+	double GetAUTODISTANCE() {return AUTODISTANCE;}
 };
 
 #endif /* SRC_MECHANUMDRIVETRAIN_H_ */
