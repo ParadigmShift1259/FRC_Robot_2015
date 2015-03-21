@@ -21,6 +21,8 @@ private:
 	bool lowered = false;
 	bool skipVacuumSensors = false;
 	bool justStarted = false;
+	bool cleared = false;
+	bool clearing = false;
 
 	const double pi =
 			3.141592653589793238462643383279502884197169399375105820974944592307816406286;
@@ -46,10 +48,11 @@ private:
 	int countSinceVacuumRetractTriggered = VACUUM_RETRACT_TIME + 1;
 	int countSinceToteGrabberRetractTriggered = GRABBER_RETRACT_TIME + 1;
 	int countSinceToteGrabberExtendTriggered = GRABBER_EXTEND_TIME + 1;
+	int countSinceArmDeployTriggered = ARM_DEPLOY_TIME +1;
 	int countSinceSettleTriggered = SETTLE_TIME +1;
 
 	int dropCount = 0;
-	int clearCount = 0;
+	int emerClearCount = 0;
 
 	bool useNotifier = false;
 	Notifier* vacuumRetractNotifier;
@@ -89,7 +92,10 @@ public:
 	void LifterQueuedFunctions();
 	void Zero();
 	void Disable();
+	void Clear();
 	bool Zeroed();
+	bool Cleared();
+	bool Clearing();
 	bool SafeChangeVacuumState();
 	void StartEmergencyClear();
 	bool VacuumsAttached();

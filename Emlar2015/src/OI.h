@@ -32,6 +32,7 @@ private:
 	bool secondaryButton10LastCalled = false;
 	bool secondaryButton11LastCalled = false;
 	bool secondaryButton12LastCalled = false;
+	bool secondaryButton11TriggerState = false;
 	bool button2State = false;
 	bool button3State = false;
 	bool button4State = false;
@@ -43,10 +44,10 @@ private:
 	bool secondaryButton5State = false;
 	bool secondaryButton6State = false;
 
-	const double shiftPerCycle = .1;
+	const double shiftPerCycle = 0.1;
 
 	const double deadzone = 0.15;
-	const double twistDeadzone = 0.13;
+	const double twistDeadzone = 0.15;
 	Joystick* driveJoystick;
 	Joystick* secondaryJoystick;
 
@@ -61,6 +62,7 @@ public:
 	double GetThrottle();
 	double GetRawY();
 	double GetSecondaryRawY();
+	double GetSecondaryDeadZonedY();
 	Joystick* GetJoystick() const;
 	bool GetToggleButton2();
 	bool GetToggleButton3();
@@ -89,6 +91,8 @@ public:
 	bool GetSingularSecondaryButton10();
 	bool GetSingularSecondaryButton11();
 	bool GetSingularSecondaryButton12();
+	bool GetToggleSecondaryButton11();
+
 };
 
 #endif /* SRC_OI_H_ */

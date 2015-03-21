@@ -22,10 +22,13 @@ Lifter::Lifter(double p, double i, double d, CANTalon* lifterMotor,
 	this->intakeWheels = intakeWheels;
 	this->numberOfVacuums = numberOfVacuums;
 	lifterMotor->SetPID(p, i, d);
-	//Note that the first argument is actualy the function handle, not the return value of the function
-	this->vacuumRetractNotifier = new Notifier(Lifter::VacuumRetractNotifierHandler, this);
-	this->toteGrabberRetractNotifier = new Notifier(Lifter::ToteGrabberRetractNotifierHandler, this);
-	this->toteGrabberExtendNotifier = new Notifier(Lifter::ToteGrabberExtendNotifierHandler, this);
+	//Note that the first argument is actually the function handle, not the return value of the function
+	this->vacuumRetractNotifier = new Notifier(
+			Lifter::VacuumRetractNotifierHandler, this);
+	this->toteGrabberRetractNotifier = new Notifier(
+			Lifter::ToteGrabberRetractNotifierHandler, this);
+	this->toteGrabberExtendNotifier = new Notifier(
+			Lifter::ToteGrabberExtendNotifierHandler, this);
 	this->settleNotifier = new Notifier(Lifter::SettleNotifierHandler, this);
 
 }
@@ -55,6 +58,17 @@ bool Lifter::Zeroed() {
 	return zeroed;
 }
 
+bool Lifter::Cleared() {
+	return cleared;
+}
+
+void Lifter::Clear() {
+	clearing = true;
+	cleared = false;
+	DeployTote();
+	countSinceArmDeployTriggered = 0;
+}
+
 bool Lifter::JustStarted() {
 	return justStarted;
 }
@@ -77,17 +91,32 @@ void Lifter::Zero() {
 }
 
 void Lifter::LifterQueuedFunctions() {
+	if (clearing) {
+		countSinceArmDeployTriggered++;
+		if(countSinceArmDeployTriggered == ARM_DEPLOY_TIME ) {
+			RetractTote();
+			clearing = false;
+			cleared = true;
+		}
+	}
 	//tote dropping
 	if (dropping) {
 		dropCount++;
 		if (dropCount > ARM_DEPLOY_TIME && InPos() && lowered) {
-			lowered = false;
+			lowered = true;
 			ReleaseTote();
-			dropping = false;
 		}
 		if (dropCount == ARM_DEPLOY_TIME) {
 			lowered = true;
 			lifterMotor->Set(lifterMotor->GetSetpoint() - DROPDISTANCE);
+		}
+		if(lowered == true && InPos()){
+			RetractTote();
+			lifterMotor->Set(VACUUMCLEARANCE);
+		}
+		if(toteDeployer->Get() == toteDeployer->kReverse) {
+			dropping = false;
+			lowered = false;
 		}
 	}
 	//tote grabbing
@@ -115,7 +144,8 @@ void Lifter::LifterQueuedFunctions() {
 				skipVacuumSensors = false;
 				countSinceVacuumRetractTriggered = 0;
 				if (useNotifier) {
-					vacuumRetractNotifier->StartSingle(VACUUM_RETRACT_TIME/20.0);
+					vacuumRetractNotifier->StartSingle(
+							VACUUM_RETRACT_TIME / 20.0);
 				}
 			}
 			if ((lifterMotor->GetSetpoint() == (VACUUMCLEARANCE - DROPDISTANCE))
@@ -123,7 +153,8 @@ void Lifter::LifterQueuedFunctions() {
 				ReleaseTote();
 				countSinceToteGrabberExtendTriggered = 0;
 				if (useNotifier) {
-					toteGrabberExtendNotifier->StartSingle(GRABBER_EXTEND_TIME/20.0);
+					toteGrabberExtendNotifier->StartSingle(
+							GRABBER_EXTEND_TIME / 20.0);
 				}
 				intakeWheels->DisableWheels();
 			}
@@ -131,7 +162,7 @@ void Lifter::LifterQueuedFunctions() {
 			if ((lifterMotor->GetSetpoint() == FLOOR) && InPos()) {
 				countSinceSettleTriggered = 0;
 				if (useNotifier) {
-					settleNotifier->StartSingle(SETTLE_TIME/20.0);
+					settleNotifier->StartSingle(SETTLE_TIME / 20.0);
 				}
 			}
 		}
@@ -147,7 +178,8 @@ void Lifter::LifterQueuedFunctions() {
 			GrabTote();
 			countSinceToteGrabberRetractTriggered = 0;
 			if (useNotifier) {
-				toteGrabberRetractNotifier->StartSingle(GRABBER_RETRACT_TIME/20.0);
+				toteGrabberRetractNotifier->StartSingle(
+						GRABBER_RETRACT_TIME / 20.0);
 				countSinceSettleTriggered++;
 			}
 		}
@@ -161,7 +193,7 @@ void Lifter::LifterQueuedFunctions() {
 		}
 		if (countSinceToteGrabberExtendTriggered == GRABBER_EXTEND_TIME) {
 			lifterMotor->Set(FLOOR);
-			if(useNotifier) {
+			if (useNotifier) {
 				countSinceToteGrabberExtendTriggered++;
 			}
 		}
@@ -173,13 +205,13 @@ void Lifter::LifterQueuedFunctions() {
 		}
 	}
 	if (emergencyClearing && InPos()) {
-		clearCount++;
+		emerClearCount++;
 		dropping = false;
 		grabbingTote = false;
 	}
-	if (clearCount / 50 == 1) {
+	if (emerClearCount / 50 == 1) {
 		emergencyClearing = false;
-		clearCount = 0;
+		emerClearCount = 0;
 	}
 
 }
@@ -206,13 +238,17 @@ void Lifter::RetractVacuum() {
 		vacuumDeployer->Set(vacuumDeployer->kReverse);
 	}
 }
+
+bool Lifter::Clearing() {
+	return clearing;
+}
 void Lifter::DeployTote() {
-	if (lifterMotor->GetPosition() > ((VACUUMCLEARANCE - THRESHOLD) / 2)) {
+	if ((lifterMotor->GetPosition() > ((VACUUMCLEARANCE - THRESHOLD) / 4))||!cleared) {
 		toteDeployer->Set(toteDeployer->kReverse);
 	}
 }
 void Lifter::RetractTote() {
-	if (lifterMotor->GetPosition() > ((VACUUMCLEARANCE - THRESHOLD) / 2)) {
+	if ((lifterMotor->GetPosition() > ((VACUUMCLEARANCE - THRESHOLD) / 4))||!cleared) {
 		toteDeployer->Set(toteDeployer->kForward);
 	}
 }
@@ -232,18 +268,14 @@ void Lifter::SkipVacuumSensors() {
 }
 
 void Lifter::StartVacuums() {
-	vacuums[0]->Start();
-	vacuums[1]->Start();
-	vacuums[2]->Start();
-	vacuums[3]->Start();
-	vacuums[4]->Start();
+	for (int i = 0; i < numberOfVacuums; i++) {
+		vacuums[i]->Start();
+	}
 }
 void Lifter::StopVacuums() {
-	vacuums[0]->Stop();
-	vacuums[1]->Stop();
-	vacuums[2]->Stop();
-	vacuums[3]->Stop();
-	vacuums[4]->Stop();
+	for (int i = 0; i < numberOfVacuums; i++) {
+		vacuums[i]->Stop();
+	}
 }
 bool Lifter::VacuumsAttached() {
 	return vacuumSensors->IsAttached();
@@ -275,22 +307,22 @@ void Lifter::MoveTo(double setpoint) {
 }
 
 void Lifter::VacuumRetractNotifierHandler(void* lifter) {
-	Lifter* trigger=(Lifter*) lifter;
+	Lifter* trigger = (Lifter*) lifter;
 	trigger->TriggerVacuumRetract();
 }
 
 void Lifter::ToteGrabberRetractNotifierHandler(void* lifter) {
-	Lifter* trigger=(Lifter*) lifter;
+	Lifter* trigger = (Lifter*) lifter;
 	trigger->TriggerToteGrabberRetract();
 }
 
 void Lifter::ToteGrabberExtendNotifierHandler(void* lifter) {
-	Lifter* trigger=(Lifter*) lifter;
+	Lifter* trigger = (Lifter*) lifter;
 	trigger->TriggerToteGrabberExtend();
 }
 
 void Lifter::SettleNotifierHandler(void* lifter) {
-	Lifter* trigger=(Lifter*) lifter;
+	Lifter* trigger = (Lifter*) lifter;
 	trigger->TriggerSettle();
 }
 

@@ -6,6 +6,7 @@
  */
 #include <MecanumDriveTrain.h>
 #include <iostream>
+#include <math.h>
 
 void MecanumDriveTrain::Drive() {
 	double y = operatorInputs->GetY();
@@ -19,75 +20,74 @@ void MecanumDriveTrain::Drive() {
 }
 
 bool MecanumDriveTrain::DriveForward(double distance) {
-	double distanceDriven = driveEncoders->GetDistanceStraight();
-	double speed = 0;
-	if (distanceDriven > distance) {
-		speed = 0;
-		lastSpeed = 0;
-	} else if (distanceDriven > (.5 * (distance))) {
-		speed = lastSpeed + .001;
+	double distanceDriven = -driveEncoders->GetDistanceStraight();
+	double speed = 0.0;
+	if (std::abs(distance - distanceDriven) < THRESHOLD) {
+		speed = 0.0;
+	} else if (distanceDriven < (0.5 * (distance))) {
+		speed = lastSpeed + 0.001;
+	} else if (lastSpeed > 0.001) {
+		speed = lastSpeed - 0.001;
 	} else {
-		if (lastSpeed != .001 && distanceDriven != distance) {
-			speed = lastSpeed - .01;
-		}
+		speed = 0.001;
 	}
 	lastSpeed = speed;
 	robotDrive->MecanumDrive_Cartesian(strafePIDOffset, -speed, gyroPIDOffset);
-	return (distanceDriven == distance);
+	SmartDashboard::PutNumber("DistanceForwards", distanceDriven);
+	SmartDashboard::PutNumber("SpeedForwards",speed);
+	return (std::abs(distanceDriven - distance) < THRESHOLD);
+}
+bool MecanumDriveTrain::DriveBackward(double distance) {
+	double distanceDriven = driveEncoders->GetDistanceStraight();
+	double speed = 0.0;
+	if (std::abs(distance - distanceDriven) < THRESHOLD) {
+		speed = 0.0;
+	} else if (distanceDriven < (0.5 * (distance))) {
+		speed = lastSpeed + 0.001;
+	} else if (lastSpeed != 0.001) {
+		speed = lastSpeed - 0.001;
+	}
+	lastSpeed = speed;
+	robotDrive->MecanumDrive_Cartesian(strafePIDOffset, speed, gyroPIDOffset);
+	SmartDashboard::PutNumber("DistanceBackwards", distanceDriven);
+	SmartDashboard::PutNumber("SpeedBackwards",speed);
+	return (std::abs(distanceDriven - distance) < THRESHOLD);
 }
 
 bool MecanumDriveTrain::DriveRight(double distance) {
-	double distanceDriven = driveEncoders->GetDistanceStraight();
-	double speed = 0;
-	if ((distanceDriven - distance) < THRESHOLD) {
-		return true;
-	}
-	if (distanceDriven < (.5 * (distance))) {
-		speed = lastSpeed + .01;
-	} else if (lastSpeed != .01 && distanceDriven < distance) {
-		speed = lastSpeed - .01;
-	} else {
-		speed = -.05;
-	}
-	lastSpeed = speed;
-	robotDrive->MecanumDrive_Cartesian(straightPIDOffset, -speed, gyroPIDOffset);
-	return false;
-}
-bool MecanumDriveTrain::DriveBackward(double distance) {
-	double distanceDriven = -driveEncoders->GetDistanceStraight();
-	double speed = 0;
-	if ((distanceDriven - distance) < THRESHOLD) {
-		return true;
-	}
-	if (distanceDriven < (.5 * (distance))) {
-		speed = lastSpeed + .01;
-	} else if (lastSpeed != .01 && distanceDriven < distance) {
-		speed = lastSpeed - .01;
-	} else {
-		speed = -.05;
-	}
-	lastSpeed = speed;
-	robotDrive->MecanumDrive_Cartesian(straightPIDOffset, speed, gyroPIDOffset);
-	return false;
-}
-
-bool MecanumDriveTrain::DriveLeft(double distance) {
 	double distanceDriven = -driveEncoders->GetDistanceStrafe();
-	double speed = 0;
-	if ((distanceDriven - distance) < THRESHOLD) {
-		return true;
-	}
-	if (distanceDriven < (.5 * (distance))) {
-		speed = lastSpeed + .01;
-	} else if (lastSpeed != .01 && distanceDriven < distance) {
-		speed = lastSpeed - .01;
-	} else {
-		speed = -.05;
+	double speed = 0.0;
+	if (std::abs(distance - distanceDriven) < THRESHOLD) {
+		speed = 0.0;
+	} else if (distanceDriven < (0.5 * (distance))) {
+		speed = lastSpeed + 0.001;
+	} else if (lastSpeed != 0.001) {
+		speed = lastSpeed - 0.001;
 	}
 	lastSpeed = speed;
 	robotDrive->MecanumDrive_Cartesian(speed, straightPIDOffset, gyroPIDOffset);
-	return false;
+	SmartDashboard::PutNumber("DistanceRight", distanceDriven);
+	SmartDashboard::PutNumber("SpeedRight",speed);
+	return (std::abs(distanceDriven - distance) < THRESHOLD);
 }
+
+bool MecanumDriveTrain::DriveLeft(double distance) {
+	double distanceDriven = driveEncoders->GetDistanceStrafe();
+	double speed = 0.0;
+	if (std::abs(distance - distanceDriven) < THRESHOLD) {
+		speed = 0.0;
+	} else if (distanceDriven < (0.5 * (distance))) {
+		speed = lastSpeed + 0.001;
+	} else if (lastSpeed > 0.001) {
+		speed = lastSpeed - 0.001;
+	} else {
+		speed = .001;
+	}
+	lastSpeed = speed;
+	robotDrive->MecanumDrive_Cartesian(-speed, strafePIDOffset, gyroPIDOffset);
+	SmartDashboard::PutNumber("DistanceLeft", distanceDriven);
+	SmartDashboard::PutNumber("SpeedLeft",speed);
+	return (std::abs(distanceDriven - distance) < THRESHOLD);}
 
 void MecanumDriveTrain::Stop() {
 	robotDrive->MecanumDrive_Cartesian(0, 0, 0);
